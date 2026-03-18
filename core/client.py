@@ -30,9 +30,6 @@ class BotClient:
         self.schedules = load_instances_from_directory("schedules", "schedules", BaseSchedule, self)
 
     def setup_handlers(self) -> None:
-        self.dp.message.register(self._handle_message_waiter)
-        self.dp.callback_query.register(self._handle_button_waiter)
-
         self.logger.info("Loading existing handlers:")
 
         count = 0
@@ -58,6 +55,9 @@ class BotClient:
             count += 1
             self.logger.info("[message] Loaded trigger: %s", message.trigger)
         self.logger.info("Loaded %d messages", count)
+
+        self.dp.message.register(self._handle_message_waiter)
+        self.dp.callback_query.register(self._handle_button_waiter)
 
     async def _handle_message_waiter(self, message: Message) -> None:
         await self.waiter.resolve_message(message)
