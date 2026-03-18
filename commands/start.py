@@ -1,6 +1,7 @@
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message
 
 from core.implementations.command import BaseCommand
+from utils.main_menu import send_main_menu
 
 
 class StartCommand(BaseCommand):
@@ -8,12 +9,4 @@ class StartCommand(BaseCommand):
     description = "Запустить бота"
 
     async def execute(self, msg: Message) -> None:
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text="🏃‍♂️ СТАРТ!", callback_data="start_help")]
-            ]
-        )
-
-        await msg.reply("👋 Привет! Я помощник тренера.\n"
-                        "➡️ Если ты хочешь <b>стать лучше</b> нажми "
-                        "<b>СТАРТ!</b> ниже!", reply_markup=keyboard, parse_mode="HTML")
+        await send_main_menu(msg.bot, msg.chat.id)
