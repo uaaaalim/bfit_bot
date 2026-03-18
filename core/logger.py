@@ -35,4 +35,6 @@ def setup_logger(level: str = "INFO") -> logging.Logger:
     root.addHandler(handler)
     root.setLevel(level.upper())
 
+    logging.getLogger("aiogram.event").setLevel(logging.WARNING)
+
     return logging.getLogger("bfit_bot")
