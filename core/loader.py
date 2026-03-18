@@ -1,6 +1,6 @@
 import importlib
 import inspect
-from pathlib import Path
+import pkgutil
 
 
 def load_instances_from_directory(
@@ -10,11 +10,17 @@ def load_instances_from_directory(
     *args,
 ):
     instances = []
-    for path in sorted(Path(directory).glob("*.py")):
-        if path.name.startswith("__"):
+    for module_info in sorted(
+        pkgutil.walk_packages(path=[directory], prefix=f"{package_name}."),
+        key=lambda item: item.name,
+    ):
+        if module_info.ispkg:
+            continue
+        module_name = module_info.name.rsplit(".", maxsplit=1)[-1]
+        if module_name.startswith("__"):
             continue
 
-        module = importlib.import_module(f"{package_name}.{path.stem}")
+        module = importlib.import_module(module_info.name)
         for _, obj in inspect.getmembers(module, inspect.isclass):
             if obj is base_class:
                 continue
