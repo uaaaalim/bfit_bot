@@ -17,7 +17,7 @@ class BaseCommand:
 
     async def handle(self, message: Message) -> None:
         if not message.from_user:
-            self.client.logger.warning("command /%s skipped: no from_user", self.name)
+            # self.client.logger.warning("Command /%s skipped: no from_user", self.name)
             return
         await self.execute(message)
 

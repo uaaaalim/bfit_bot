@@ -33,17 +33,31 @@ class BotClient:
         self.dp.message.register(self._handle_message_waiter)
         self.dp.callback_query.register(self._handle_button_waiter)
 
+        self.logger.info("Loading existing handlers:")
+
+        count = 0
         for command in self.commands:
             self.dp.message.register(command.handle, Command(command.name))
-            self.logger.info("loaded command /%s - %s", command.name, command.description)
 
+            count += 1
+            self.logger.info("[command] Loaded /%s - %s", command.name, command.description)
+        self.logger.info("Loaded %d commands", count)
+
+        count = 0
         for button in self.buttons:
             self.dp.callback_query.register(button.handle, F.data == button.callback_data)
-            self.logger.info("loaded button %s", button.callback_data)
 
+            count += 1
+            self.logger.info("[button] Loaded handler: %s", button.callback_data)
+        self.logger.info("Loaded %d buttons", count)
+
+        count = 0
         for message in self.messages:
             self.dp.message.register(message.handle)
-            self.logger.info("loaded message trigger %s", message.trigger)
+
+            count += 1
+            self.logger.info("[message] Loaded trigger: %s", message.trigger)
+        self.logger.info("Loaded %d messages", count)
 
     async def _handle_message_waiter(self, message: Message) -> None:
         await self.waiter.resolve_message(message)
@@ -60,15 +74,14 @@ class BotClient:
     async def start_schedules(self) -> None:
         for schedule in self.schedules:
             asyncio.create_task(schedule.run_forever())
-            self.logger.info("loaded schedule %s every %ss", schedule.__class__.__name__, schedule.delay_seconds)
+            self.logger.info("Loaded schedule %s every %ss", schedule.__class__.__name__, schedule.delay_seconds)
 
     async def run(self) -> None:
         self.setup_handlers()
         await self.start_schedules()
-        self.logger.info("bot started and polling is running")
         await self.dp.start_polling(self.bot)
 
     async def shutdown(self) -> None:
         await self.db.dispose()
         await self.bot.session.close()
-        self.logger.info("bot shutdown complete")
+        self.logger.info("Bot shutdown complete")
