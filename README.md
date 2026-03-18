@@ -361,7 +361,9 @@ poetry run alembic revision --autogenerate -m "add workouts table"
 
 ## Важно для autogenerate
 
-Чтобы Alembic видел новые модели, они должны быть импортированы в `alembic/env.py` (сейчас там импортируется `User`).
+В проекте настроен авто-импорт всех модулей из `database/entities/` внутри `alembic/env.py`, поэтому вручную добавлять импорт каждой новой модели не нужно.
+
+Также `alembic/env.py` читает `.env` через `python-dotenv` и, если задан `DATABASE_URL`, подставляет его в `sqlalchemy.url` (поверх значения из `alembic.ini`).
 
 После генерации проверьте содержимое файла в `alembic/versions/` и примените:
 

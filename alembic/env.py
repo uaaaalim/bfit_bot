@@ -1,15 +1,37 @@
+import importlib
+import os
+import pkgutil
 from logging.config import fileConfig
 
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
 from core.database.base import Base
-from database.entities.user import User  # noqa: F401
+
+
+def import_all_entities(package_name: str = "database.entities") -> None:
+    package = importlib.import_module(package_name)
+
+    if not hasattr(package, "__path__"):
+        return
+
+    for _, module_name, is_pkg in pkgutil.iter_modules(package.__path__):
+        if module_name.startswith("_") or is_pkg:
+            continue
+        importlib.import_module(f"{package_name}.{module_name}")
+
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+load_dotenv()
+database_url = os.getenv("DATABASE_URL")
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
+
+import_all_entities()
 target_metadata = Base.metadata
 
 
