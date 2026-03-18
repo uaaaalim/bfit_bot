@@ -68,15 +68,8 @@ class BotClient:
     async def wait_for_message(self, chat_id: int, user_id: int, timeout: int, on_timeout=None):
         return await self.waiter.wait_message(chat_id, user_id, timeout, on_timeout)
 
-    async def wait_for_button(
-        self,
-        chat_id: int,
-        user_id: int,
-        timeout: int,
-        message_id: int | None = None,
-        on_timeout=None,
-    ):
-        return await self.waiter.wait_button(chat_id, user_id, timeout, message_id, on_timeout)
+    async def wait_for_button(self, chat_id: int, user_id: int, timeout: int, on_timeout=None):
+        return await self.waiter.wait_button(chat_id, user_id, timeout, on_timeout)
 
     async def start_schedules(self) -> None:
         count = 0
