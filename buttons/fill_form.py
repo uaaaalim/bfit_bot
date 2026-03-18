@@ -1,6 +1,7 @@
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from core.implementations.button import BaseButton
+from utils.main_menu import send_main_menu
 
 
 class FillFormButton(BaseButton):
@@ -21,6 +22,7 @@ class FillFormButton(BaseButton):
         await callback.answer()
 
         chat_id = callback.message.chat.id
+        await callback.message.delete()
         user_id = callback.from_user.id
 
         intro = (
@@ -31,18 +33,22 @@ class FillFormButton(BaseButton):
 
         name = await self._ask_name(chat_id=chat_id, user_id=user_id)
         if name is None:
+            await send_main_menu(self.client.bot, chat_id)
             return
 
         purpose = await self._ask_purpose(chat_id=chat_id, user_id=user_id)
         if purpose is None:
+            await send_main_menu(self.client.bot, chat_id)
             return
 
         direction = await self._ask_direction(chat_id=chat_id, user_id=user_id)
         if direction is None:
+            await send_main_menu(self.client.bot, chat_id)
             return
 
         restrictions = await self._ask_restrictions(chat_id=chat_id, user_id=user_id)
         if restrictions is None:
+            await send_main_menu(self.client.bot, chat_id)
             return
 
         summary = (
@@ -53,6 +59,7 @@ class FillFormButton(BaseButton):
             f"4. Травмы/ограничения: {restrictions}"
         )
         await callback.message.answer(summary)
+        await send_main_menu(self.client.bot, chat_id)
 
     async def _ask_name(self, chat_id: int, user_id: int) -> str | None:
         while True:
