@@ -56,10 +56,27 @@ class FillFormButton(BaseButton):
             f"1. Имя: {name}\n"
             f"2. Цель: {purpose}\n"
             f"3. Направление: {direction}\n"
-            f"4. Травмы/ограничения: {restrictions}"
+            f"4. Травмы/ограничения: {restrictions}\n\n"
+            "❗ Ожидай обязательно ответа, мы свяжемся."
         )
         await callback.message.answer(summary)
-        await send_main_menu(self.client.bot, chat_id)
+
+        if self.client.config.author_id:
+            link = f'<a href="tg://user?id={callback.from_user.id}">{callback.from_user.full_name}</a>'
+
+            await callback.bot.send_message(
+                self.client.config.author_id,
+                f"🆕 <b>НОВАЯ АНКЕТА</b> от {link}\n\n"
+                f"Данные анкеты:\n"
+                f"1. Имя: {name}\n"
+                f"2. Цель: {purpose}\n"
+                f"3. Направление: {direction}\n"
+                f"4. Травмы или ограничения: {restrictions}",
+                parse_mode="HTML"
+            )
+
+        # not needed now, because we don't have other buttons
+        # await send_main_menu(self.client.bot, chat_id)
 
     async def _ask_name(self, chat_id: int, user_id: int) -> str | None:
         while True:
