@@ -8,10 +8,10 @@ class FillFormButton(BaseButton):
     callback_data = "menu:fill_form"
 
     _direction_options = {
-        "survey_direction_gym": "🏋️Фитнес-качалка",
-        "survey_direction_functional": "🔥Функциональные тренировки",
+        "survey_direction_gym": "🏋️ Фитнес-качалка",
+        "survey_direction_functional": "🔥 Функциональные тренировки",
         "survey_direction_boxing": "🥊 Бокс",
-        "survey_direction_stretch": "🤸Растяжка-гибкость",
+        "survey_direction_stretch": "🤸 Растяжка-гибкость",
     }
 
     async def execute(self, callback: CallbackQuery) -> None:
@@ -54,30 +54,42 @@ class FillFormButton(BaseButton):
             return
 
         summary = (
-            "✅ Анкета заполнена!\n\n"
+            "✅ Спасибо, анкета получена:\n\n"
             f"1. Имя: {name}\n"
             f"2. Цель: {purpose}\n"
             f"3. Направление: {direction}\n"
             f"4. Травмы/ограничения: {restrictions}\n\n"
-            "❗ Ожидай обязательно ответа, мы свяжемся."
+            "❗ Ожидай обязательно ответа, я постараюсь связаться с тобой в ближайшее время."
         )
         await callback.message.answer(summary)
 
         if self.client.config.author_id:
             if not callback.from_user.username:
-                link = f'<a href="tg://user?id={callback.from_user.id}">{callback.from_user.full_name}</a>'
+                user = f'<a href="tg://user?id={callback.from_user.id}">{callback.from_user.full_name}</a>'
             else:
-                link = f'@{callback.from_user.username} ({callback.from_user.full_name})'
+                user = f'@{callback.from_user.username} ({callback.from_user.full_name})'
+
+            link_keyboard = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="📞 Связаться с автором анкеты",
+                            url=callback.from_user.url
+                        )
+                    ]
+                ]
+            )
 
             await callback.bot.send_message(
                 self.client.config.author_id,
-                f"🆕 <b>НОВАЯ АНКЕТА</b> от {link}\n\n"
+                f"🆕 <b>НОВАЯ АНКЕТА</b> от {user}\n\n"
                 f"Данные анкеты:\n"
                 f"1. Имя: {name}\n"
                 f"2. Цель: {purpose}\n"
                 f"3. Направление: {direction}\n"
                 f"4. Травмы или ограничения: {restrictions}",
-                parse_mode="HTML"
+                parse_mode="HTML",
+                reply_markup=link_keyboard
             )
 
         await send_main_menu(self.client.bot, chat_id)
@@ -160,6 +172,7 @@ class FillFormButton(BaseButton):
                 chat_id=chat_id,
                 user_id=user_id,
                 timeout=30,
+                message_id=prompt.message_id,
                 on_timeout=on_timeout,
             )
             if pressed is None:

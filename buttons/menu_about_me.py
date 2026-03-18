@@ -12,6 +12,9 @@ class AboutMeButton(BaseButton):
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
+                    InlineKeyboardButton(text="📃 Заполнить анкету", callback_data="menu:fill_form")
+                ],
+                [
                     InlineKeyboardButton(text="⬅️ Вернуться в главное меню", callback_data="menu:main")
                 ]
             ]
@@ -39,7 +42,7 @@ class AboutMeButton(BaseButton):
             "Каждая программа подстраивается под человека, а не наоборот.\n\n"
             "🎯 Результат: Сильное тело, выносливость, уверенность и понимание, "
             "как поддерживать форму без откатов назад.\n\n"
-            "<b>Если ты готов работать — тогда это имеет смысл</b>. ✅",
+            "<b>Если ты готов работать — тогда заполняй анкету</b>. ✅",
             reply_markup=keyboard,
             parse_mode="HTML"
         )
