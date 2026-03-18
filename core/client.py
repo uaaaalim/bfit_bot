@@ -53,8 +53,8 @@ class BotClient:
             self.dp.message.register(message.handle)
 
             count += 1
-            self.logger.info("[message] Loaded trigger: %s", message.trigger)
-        self.logger.info("Loaded %d messages", count)
+            self.logger.info("[message trigger] Loaded trigger: %s", message.trigger)
+        self.logger.info("Loaded %d message triggers", count)
 
         self.dp.message.register(self._handle_message_waiter)
         self.dp.callback_query.register(self._handle_button_waiter)
@@ -72,9 +72,15 @@ class BotClient:
         return await self.waiter.wait_button(chat_id, user_id, timeout, on_timeout)
 
     async def start_schedules(self) -> None:
+        count = 0
+
         for schedule in self.schedules:
             asyncio.create_task(schedule.run_forever())
-            self.logger.info("Loaded schedule %s every %ss", schedule.__class__.__name__, schedule.delay_seconds)
+
+            count += 1
+            self.logger.info("[schedule] Loaded %s every %s seconds", schedule.__class__.__name__, schedule.delay_seconds)
+
+        self.logger.info("Loaded %d schedules", count)
 
     async def run(self) -> None:
         self.setup_handlers()
