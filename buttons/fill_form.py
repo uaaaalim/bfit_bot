@@ -56,7 +56,7 @@ class FillFormButton(BaseButton):
 
     async def _ask_name(self, chat_id: int, user_id: int) -> str | None:
         while True:
-            await self.client.bot.send_message(chat_id, "1. Как тебя зовут? 🙂")
+            _msg = await self.client.bot.send_message(chat_id, "➡️ Как тебя зовут? 🙂")
             message = await self._wait_message(chat_id=chat_id, user_id=user_id)
             if message is None:
                 return None
@@ -75,11 +75,13 @@ class FillFormButton(BaseButton):
                     "Некорректное имя: нужно от 2 до 15 символов. Попробуй ещё раз.",
                 )
                 continue
+
+            await _msg.delete()
             return name
 
     async def _ask_purpose(self, chat_id: int, user_id: int) -> str | None:
         while True:
-            await self.client.bot.send_message(chat_id, "2. Какая у тебя цель?")
+            _msg = await self.client.bot.send_message(chat_id, "➡️ Какая у тебя цель?")
             message = await self._wait_message(chat_id=chat_id, user_id=user_id)
             if message is None:
                 return None
@@ -98,25 +100,27 @@ class FillFormButton(BaseButton):
             if not purpose:
                 await self.client.bot.send_message(chat_id, "Пустой ответ не подходит. Напиши свою цель.")
                 continue
+
+            await _msg.delete()
             return purpose
 
     async def _ask_direction(self, chat_id: int, user_id: int) -> str | None:
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(text="🏋️Фитнес-качалка", callback_data="survey_direction_gym"),
-                    InlineKeyboardButton(text="🔥Функциональные тренировки", callback_data="survey_direction_functional"),
+                    InlineKeyboardButton(text="🏋️ Фитнес-качалка", callback_data="survey_direction_gym"),
+                    InlineKeyboardButton(text="🔥 Функциональные тренировки", callback_data="survey_direction_functional"),
                 ],
                 [
                     InlineKeyboardButton(text="🥊 Бокс", callback_data="survey_direction_boxing"),
-                    InlineKeyboardButton(text="🤸Растяжка-гибкость", callback_data="survey_direction_stretch"),
+                    InlineKeyboardButton(text="🤸 Растяжка-гибкость", callback_data="survey_direction_stretch"),
                 ],
             ]
         )
 
         prompt = await self.client.bot.send_message(
             chat_id,
-            "3. Какое направление тебе ближе?",
+            "➡️ Какое направление тебе ближе?",
             reply_markup=keyboard,
         )
 
@@ -138,12 +142,12 @@ class FillFormButton(BaseButton):
                 continue
 
             await pressed.answer()
-            await prompt.edit_reply_markup(reply_markup=None)
+            await prompt.delete()
             return self._direction_options[pressed.data]
 
     async def _ask_restrictions(self, chat_id: int, user_id: int) -> str | None:
         while True:
-            await self.client.bot.send_message(chat_id, "4. Есть ли травмы или ограничения по здоровью?")
+            _msg = await self.client.bot.send_message(chat_id, "➡️ Есть ли травмы или ограничения по здоровью?")
             message = await self._wait_message(chat_id=chat_id, user_id=user_id)
             if message is None:
                 return None
@@ -165,6 +169,8 @@ class FillFormButton(BaseButton):
                     "Пустой ответ не подходит. Если ограничений нет, напиши 'Нет'.",
                 )
                 continue
+
+            await _msg.delete()
             return restrictions
 
     async def _wait_message(self, chat_id: int, user_id: int) -> Message | None:
