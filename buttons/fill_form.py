@@ -1,4 +1,4 @@
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from core.implementations.button import BaseButton
 
@@ -6,5 +6,178 @@ from core.implementations.button import BaseButton
 class FillFormButton(BaseButton):
     callback_data = "fill_form"
 
+    _direction_options = {
+        "survey_direction_gym": "🏋️Фитнес-качалка",
+        "survey_direction_functional": "🔥Функциональные тренировки",
+        "survey_direction_boxing": "🥊 Бокс",
+        "survey_direction_stretch": "🤸Растяжка-гибкость",
+    }
+
     async def execute(self, callback: CallbackQuery) -> None:
-        pass
+        if not callback.message:
+            await callback.answer("Не удалось открыть анкету", show_alert=True)
+            return
+
+        await callback.answer()
+
+        chat_id = callback.message.chat.id
+        user_id = callback.from_user.id
+
+        intro = (
+            "📋 Подберём тебе идеальный формат тренировок. 💪\n"
+            "Займёт меньше 30 секунд, заполни анкету:"
+        )
+        await callback.message.answer(intro)
+
+        name = await self._ask_name(chat_id=chat_id, user_id=user_id)
+        if name is None:
+            return
+
+        purpose = await self._ask_purpose(chat_id=chat_id, user_id=user_id)
+        if purpose is None:
+            return
+
+        direction = await self._ask_direction(chat_id=chat_id, user_id=user_id)
+        if direction is None:
+            return
+
+        restrictions = await self._ask_restrictions(chat_id=chat_id, user_id=user_id)
+        if restrictions is None:
+            return
+
+        summary = (
+            "✅ Анкета заполнена!\n\n"
+            f"1. Имя: {name}\n"
+            f"2. Цель: {purpose}\n"
+            f"3. Направление: {direction}\n"
+            f"4. Травмы/ограничения: {restrictions}"
+        )
+        await callback.message.answer(summary)
+
+    async def _ask_name(self, chat_id: int, user_id: int) -> str | None:
+        while True:
+            await self.client.bot.send_message(chat_id, "1. Как тебя зовут? 🙂")
+            message = await self._wait_message(chat_id=chat_id, user_id=user_id)
+            if message is None:
+                return None
+
+            if not self._is_text_message(message):
+                await self.client.bot.send_message(
+                    chat_id,
+                    "Ответ должен быть текстом. Введи имя от 2 до 15 символов.",
+                )
+                continue
+
+            name = message.text.strip()
+            if len(name) < 2 or len(name) > 15:
+                await self.client.bot.send_message(
+                    chat_id,
+                    "Некорректное имя: нужно от 2 до 15 символов. Попробуй ещё раз.",
+                )
+                continue
+            return name
+
+    async def _ask_purpose(self, chat_id: int, user_id: int) -> str | None:
+        while True:
+            await self.client.bot.send_message(chat_id, "2. Какая у тебя цель?")
+            message = await self._wait_message(chat_id=chat_id, user_id=user_id)
+            if message is None:
+                return None
+
+            if not self._is_text_message(message):
+                await self.client.bot.send_message(chat_id, "Ответ должен быть текстом. Попробуй снова.")
+                continue
+
+            purpose = message.text.strip()
+            if len(purpose) > 100:
+                await self.client.bot.send_message(
+                    chat_id,
+                    "Слишком длинный ответ: цель должна быть не более 100 символов. Попробуй ещё раз.",
+                )
+                continue
+            if not purpose:
+                await self.client.bot.send_message(chat_id, "Пустой ответ не подходит. Напиши свою цель.")
+                continue
+            return purpose
+
+    async def _ask_direction(self, chat_id: int, user_id: int) -> str | None:
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="🏋️Фитнес-качалка", callback_data="survey_direction_gym"),
+                    InlineKeyboardButton(text="🔥Функциональные тренировки", callback_data="survey_direction_functional"),
+                ],
+                [
+                    InlineKeyboardButton(text="🥊 Бокс", callback_data="survey_direction_boxing"),
+                    InlineKeyboardButton(text="🤸Растяжка-гибкость", callback_data="survey_direction_stretch"),
+                ],
+            ]
+        )
+
+        prompt = await self.client.bot.send_message(
+            chat_id,
+            "3. Какое направление тебе ближе?",
+            reply_markup=keyboard,
+        )
+
+        async def on_timeout() -> None:
+            await prompt.edit_text("⏰ Время вышло. Запусти анкету заново.")
+
+        while True:
+            pressed = await self.client.wait_for_button(
+                chat_id=chat_id,
+                user_id=user_id,
+                timeout=30,
+                on_timeout=on_timeout,
+            )
+            if pressed is None:
+                return None
+
+            if pressed.data not in self._direction_options:
+                await pressed.answer("Выбери вариант только из анкеты", show_alert=True)
+                continue
+
+            await pressed.answer()
+            await prompt.edit_reply_markup(reply_markup=None)
+            return self._direction_options[pressed.data]
+
+    async def _ask_restrictions(self, chat_id: int, user_id: int) -> str | None:
+        while True:
+            await self.client.bot.send_message(chat_id, "4. Есть ли травмы или ограничения по здоровью?")
+            message = await self._wait_message(chat_id=chat_id, user_id=user_id)
+            if message is None:
+                return None
+
+            if not self._is_text_message(message):
+                await self.client.bot.send_message(chat_id, "Ответ должен быть текстом. Попробуй снова.")
+                continue
+
+            restrictions = message.text.strip()
+            if len(restrictions) > 100:
+                await self.client.bot.send_message(
+                    chat_id,
+                    "Слишком длинный ответ: ограничения по здоровью должны быть до 100 символов.",
+                )
+                continue
+            if not restrictions:
+                await self.client.bot.send_message(
+                    chat_id,
+                    "Пустой ответ не подходит. Если ограничений нет, напиши 'Нет'.",
+                )
+                continue
+            return restrictions
+
+    async def _wait_message(self, chat_id: int, user_id: int) -> Message | None:
+        async def on_timeout() -> None:
+            await self.client.bot.send_message(chat_id, "⏰ Время ожидания вышло. Запусти анкету заново.")
+
+        return await self.client.wait_for_message(
+            chat_id=chat_id,
+            user_id=user_id,
+            timeout=30,
+            on_timeout=on_timeout,
+        )
+
+    @staticmethod
+    def _is_text_message(message: Message) -> bool:
+        return bool(message.text and message.text.strip())
