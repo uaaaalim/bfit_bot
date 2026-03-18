@@ -5,7 +5,7 @@ from utils.main_menu import send_main_menu
 
 
 class FillFormButton(BaseButton):
-    callback_data = "fill_form"
+    callback_data = "menu:fill_form"
 
     _direction_options = {
         "survey_direction_gym": "🏋️Фитнес-качалка",
@@ -26,8 +26,10 @@ class FillFormButton(BaseButton):
         user_id = callback.from_user.id
 
         intro = (
-            "📋 Подберём тебе идеальный формат тренировок. 💪\n"
-            "Займёт меньше 30 секунд, заполни анкету:"
+            "📋 Подберём тебе идеальный формат тренировок 💪\n"
+            "Перед началом тренировок хочу немного узнать тебя, "
+            "чтобы сделать максимально эффективную и безопасную программу 🧠\n\n"
+            "➡️ Ответь, пожалуйста, на несколько простых вопросов:"
         )
         await callback.message.answer(intro)
 
@@ -62,7 +64,10 @@ class FillFormButton(BaseButton):
         await callback.message.answer(summary)
 
         if self.client.config.author_id:
-            link = f'<a href="tg://user?id={callback.from_user.id}">{callback.from_user.full_name}</a>'
+            if not callback.from_user.username:
+                link = f'<a href="tg://user?id={callback.from_user.id}">{callback.from_user.full_name}</a>'
+            else:
+                link = f'@{callback.from_user.username} ({callback.from_user.full_name})'
 
             await callback.bot.send_message(
                 self.client.config.author_id,
@@ -75,8 +80,7 @@ class FillFormButton(BaseButton):
                 parse_mode="HTML"
             )
 
-        # not needed now, because we don't have other buttons
-        # await send_main_menu(self.client.bot, chat_id)
+        await send_main_menu(self.client.bot, chat_id)
 
     async def _ask_name(self, chat_id: int, user_id: int) -> str | None:
         while True:

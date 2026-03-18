@@ -2,14 +2,29 @@ from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 MAIN_MENU_TEXT = (
-    "👋 Привет еще раз! Я Илья - тренер.\n\n"
-    "Перед началом тренировок хочу немного узнать тебя, "
-    "чтобы сделать максимально эффективную и безопасную программу 💪\n\n"
-    "➡️ Ответь, пожалуйста, на несколько простых вопросов:"
+    "👋 Привет. Я Илья — тренер с опытом более 15 лет.\n\n"
+
+    "Работаю на результат: похудение, набор массы, бокс и исправление осанки (сколиоз и сутулость).\n\n"
+
+    "👇 Выбирай:\n"
+    "• Обо мне — кто я и как работаю\n"
+    "• Написать в ЛС — связаться со мной\n"
+    "• Заполнить анкету — начать тренировки\n"
 )
 
 MAIN_MENU_KEYBOARD = InlineKeyboardMarkup(
-    inline_keyboard=[[InlineKeyboardButton(text="📃 Заполнить анкету", callback_data="fill_form")]]
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="👤 Обо мне", callback_data="menu:about_me"),
+            InlineKeyboardButton(text="✍️ Написать в ЛС", callback_data="menu:direct")
+        ],
+        [
+            InlineKeyboardButton(text="📃 Заполнить анкету", callback_data="menu:fill_form")
+        ],
+        [
+            InlineKeyboardButton(text="❓ Связь с разработчиком", callback_data="menu:dev_contact")
+        ]
+    ]
 )
 
 

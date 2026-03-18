@@ -5,7 +5,7 @@ from utils.main_menu import send_main_menu
 
 
 class StartButton(BaseButton):
-    callback_data = "start_help"
+    callback_data = "menu:main"
 
     async def execute(self, callback: CallbackQuery) -> None:
         if callback.message:
