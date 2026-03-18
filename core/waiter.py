@@ -15,7 +15,7 @@ class WaitContext:
 class EventWaiter:
     def __init__(self) -> None:
         self._message_waiters: dict[tuple[int, int], WaitContext] = {}
-        self._button_waiters: dict[tuple[int, int, int], WaitContext] = {}
+        self._button_waiters: dict[tuple[int, int], WaitContext] = {}
 
     async def wait_message(
         self,
@@ -35,10 +35,9 @@ class EventWaiter:
         chat_id: int,
         user_id: int,
         timeout: int,
-        message_id: int | None = None,
         on_timeout: Callable[[], Awaitable[None]] | None = None,
     ) -> CallbackQuery | None:
-        key = (chat_id, user_id, message_id if message_id is not None else -1)
+        key = (chat_id, user_id)
         future: asyncio.Future[CallbackQuery] = asyncio.get_running_loop().create_future()
         timeout_task = asyncio.create_task(self._on_timeout(self._button_waiters, key, timeout, on_timeout))
         self._button_waiters[key] = WaitContext(future=future, timeout_task=timeout_task)
@@ -58,12 +57,8 @@ class EventWaiter:
     async def resolve_button(self, callback: CallbackQuery) -> bool:
         if not callback.message:
             return False
-
-        scoped_key = (callback.message.chat.id, callback.from_user.id, callback.message.message_id)
-        common_key = (callback.message.chat.id, callback.from_user.id, -1)
-        ctx = self._button_waiters.pop(scoped_key, None)
-        if not ctx:
-            ctx = self._button_waiters.pop(common_key, None)
+        key = (callback.message.chat.id, callback.from_user.id)
+        ctx = self._button_waiters.pop(key, None)
         if not ctx:
             return False
 
@@ -74,8 +69,8 @@ class EventWaiter:
 
     async def _on_timeout(
         self,
-        store: dict[tuple[int, int, int], WaitContext],
-        key: tuple[int, int, int],
+        store: dict[tuple[int, int], WaitContext],
+        key: tuple[int, int],
         timeout: int,
         on_timeout: Callable[[], Awaitable[None]] | None,
     ) -> None:
