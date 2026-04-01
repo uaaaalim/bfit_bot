@@ -1,4 +1,7 @@
 import asyncio
+from datetime import datetime, UTC
+
+import aiohttp
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
@@ -18,11 +21,18 @@ class BotClient:
     def __init__(self) -> None:
         self.config = load_config()
         self.logger = setup_logger(self.config.log_level)
+        self.uptime = datetime.now(UTC)
 
-        self.bot = Bot(self.config.bot_token)
+        self.bot: Bot = Bot(self.config.bot_token)
         self.dp = Dispatcher()
         self.waiter = EventWaiter()
-        self.db = Database(self.config.database_url)
+        self.db = Database(
+            self.config.database_url,
+            pool_size=self.config.db_pool_size,
+            max_overflow=self.config.db_max_overflow,
+            pool_recycle=self.config.db_pool_recycle,
+        )
+        self.http_session = aiohttp.ClientSession()
 
         self.commands = load_instances_from_directory("commands", "commands", BaseCommand, self)
         self.buttons = load_instances_from_directory("buttons", "buttons", BaseButton, self)
@@ -50,7 +60,11 @@ class BotClient:
 
         count = 0
         for message in self.messages:
-            self.dp.message.register(message.handle)
+            route_filter = message.route_filter()
+            if route_filter is None:
+                self.dp.message.register(message.handle)
+            else:
+                self.dp.message.register(message.handle, route_filter)
 
             count += 1
             self.logger.info("[message trigger] Loaded trigger: %s", message.trigger)
@@ -96,5 +110,6 @@ class BotClient:
 
     async def shutdown(self) -> None:
         await self.db.dispose()
+        await self.http_session.close()
         await self.bot.session.close()
         self.logger.info("Bot shutdown complete")
