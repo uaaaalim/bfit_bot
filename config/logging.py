@@ -43,17 +43,15 @@ def setup_logging(
 
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    date = datetime.now().strftime("%Y-%m-%d")
-    log_file = log_dir / f"bot_{date}.log"
+    started_at = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    log_file = log_dir / f"bot_{started_at}.log"
 
     file_format = (
         "%(asctime)s [%(levelname)s] %(name)s "
         "%(filename)s:%(lineno)d - %(message)s"
     )
 
-    console_format = (
-        "%(asctime)s [%(levelname)s] %(name)s - %(message)s"
-    )
+    console_format = "%(asctime)s [%(levelname)s] %(name)s - %(message)s"
 
     date_format = "%Y-%m-%d %H:%M:%S"
 
@@ -85,4 +83,4 @@ def setup_logging(
     )
 
     logger = logging.getLogger(__name__)
-    logger.info(f"Loaded logging, saving logs to '{log_file}'")
+    logger.info("Loaded logging, saving logs to '%s'", log_file)
