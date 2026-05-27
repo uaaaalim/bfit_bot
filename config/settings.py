@@ -32,6 +32,14 @@ class Settings(BaseSettings):
             f"{self.postgres_port}/{self.postgres_db}"
         )
 
+    @property
+    def alembic_database_url(self) -> str:
+        return (
+            f"postgresql+psycopg://{self.postgres_user}:"
+            f"{self.postgres_password}@{self.postgres_host}:"
+            f"{self.postgres_port}/{self.postgres_db}"
+        )
+
 
 @lru_cache
 def get_settings() -> Settings:

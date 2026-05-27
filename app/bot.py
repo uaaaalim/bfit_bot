@@ -1,8 +1,11 @@
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from config import Settings
+from database import create_session_maker
+from middlewares.db import DatabaseMiddleware
 
 
 def create_bot(settings: Settings) -> Bot:
@@ -14,12 +17,11 @@ def create_bot(settings: Settings) -> Bot:
     )
 
 
-def create_dispatcher() -> Dispatcher:
+def create_dispatcher(engine: AsyncEngine) -> Dispatcher:
     dp = Dispatcher()
 
-    # Позже сюда добавим:
-    # - storage для FSM
-    # - middlewares
-    # - routers
+    session_maker = create_session_maker(engine)
+
+    dp.update.middleware(DatabaseMiddleware(session_maker))
 
     return dp
