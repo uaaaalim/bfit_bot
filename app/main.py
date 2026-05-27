@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
-from app.bot import create_bot, create_dispatcher
+from app.bot import initialize_bot
 from config import get_settings
 from config.logging import setup_logging
-from database import create_db_engine
+from utils.project_info import build_short_startup_info
 
 logger = logging.getLogger(__name__)
 
@@ -18,19 +18,10 @@ async def main() -> None:
         backup_count=settings.log_backup_count,
     )
 
-    engine = create_db_engine(settings)
+    for log in build_short_startup_info():
+        logger.info(log)
 
-    bot = create_bot(settings)
-    dp = create_dispatcher(engine)
-
-    logger.info("Bot is starting")
-
-    try:
-        await dp.start_polling(bot)
-    finally:
-        logger.info("Bot is stopping")
-        await bot.session.close()
-
+    await initialize_bot(settings)
 
 if __name__ == "__main__":
     asyncio.run(main())

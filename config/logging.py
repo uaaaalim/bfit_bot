@@ -83,3 +83,6 @@ def setup_logging(
         handlers=[file_handler, console_handler],
         force=True,
     )
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"Loaded logging, saving logs to '{log_file}'")
