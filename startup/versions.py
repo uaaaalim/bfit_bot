@@ -61,3 +61,23 @@ def get_project_version() -> str:
     return str(get_project_info()["version"])
 def get_project_authors() -> object:
     return get_project_info()["authors"]
+
+import subprocess
+
+
+def get_poetry_version() -> str:
+    try:
+        result = subprocess.run(
+            ["poetry", "--version"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        return result.stdout.strip()
+
+    except FileNotFoundError:
+        return "poetry not found"
+
+    except subprocess.CalledProcessError:
+        return "unknown"

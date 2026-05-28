@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from bot import Client
+from bot import Client, loader
 from bot.core.logger import setup_logging
 from startup import versions
 
@@ -11,7 +11,8 @@ async def run() -> None:
     setup_logging()
     logger.info("Environment variables are loaded")
 
-    logger.info("Running Python {}".format(versions.python_version()))
+    logger.info("Running Python (version {}) with {}".format(versions.python_version(),
+                versions.get_poetry_version()))
     logger.info("Running '{}' version {}".format(versions.get_project_name(), versions.get_project_version()))
     logger.info("Authors: {}".format(versions.get_project_authors()))
     logger.info("Last commit: {}".format(versions.get_git_commit()))
@@ -25,7 +26,7 @@ async def run() -> None:
     logger.info("Loading bot components...")
     bot = Client()
 
-    bot.load_routes()
+    await loader.load(bot)
 
     try:
         await bot.run()
