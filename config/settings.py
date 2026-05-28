@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     log_dir: Path = Field(alias="LOG_DIR", default=Path("logs"))
     log_backup_count: int = Field(alias="LOG_BACKUP_COUNT", default=100)
 
+    admins_raw: str = Field(alias="ADMINS")
+
+    @property
+    def admins(self) -> list[int]:
+        return list(map(int, self.admins_raw.split(",")))
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
