@@ -15,7 +15,7 @@ class IsAdminFilter(BaseFilter):
         self.admin_ids = settings.admins
 
     async def __call__(
-            self, event: TelegramObject, db_session: AsyncSession
+            self, event: TelegramObject
     ):
         if not hasattr(event, 'from_user'):
             return False
