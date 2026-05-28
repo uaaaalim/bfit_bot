@@ -33,7 +33,7 @@ def get_git_commit() -> str:
             ["git", "rev-parse", "HEAD"],
             stderr=subprocess.DEVNULL,
             text=True,
-        ).strip()
+        ).strip()[:6]
     except Exception as err:
         logger.error(f"Failed to get git commit: %s".format(err))
         return "unknown"

@@ -27,7 +27,10 @@ async def run() -> None:
 
     bot.load_routes()
 
-    await bot.run()
+    try:
+        await bot.run()
+    finally:
+        await bot.shutdown()
 
 if __name__ == '__main__':
     asyncio.run(run())
