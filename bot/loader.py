@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 async def load(client: Client) -> None:
+    """ Loads all routers (NECESSARY FUNCTION // DON'T REMOVE IT) """
     await load_routers(client.dp)
     await load_middlewares(client.dp)
 
