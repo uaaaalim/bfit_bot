@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from config import Settings
 from database import create_session_maker, create_db_engine
-from handlers import ROUTERS
+from app.setup import setup_middlewares, setup_routers
 from middlewares.db import DatabaseMiddleware
 
 logger = logging.getLogger(__name__)
@@ -26,9 +26,8 @@ async def initialize_bot(settings: Settings):
     db_engine = create_db_engine(settings)
     session_maker = create_session_maker(db_engine)
 
-    dp.update.outer_middleware(DatabaseMiddleware(session_maker))
-    for router in ROUTERS:
-        dp.include_router(router)
+    setup_middlewares(dp, DatabaseMiddleware(session_maker))
+    setup_routers(dp)
 
     try:
         await start_bot(bot, dp)
