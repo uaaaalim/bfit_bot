@@ -1,7 +1,10 @@
+import logging
 from functools import lru_cache
 
 from pydantic import SecretStr, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 class Configuration(BaseSettings):
