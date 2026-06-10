@@ -78,6 +78,20 @@ async def about_education_docs_2(callback: CallbackQuery):
 
     await callback.answer()
     await callback.message.edit_media(
-        media=InputMediaPhoto(media=FSInputFile("attachments/photo/photo_2026-05-31_23-49-55.jpg")),
+        media=InputMediaPhoto(media=FSInputFile("attachments/photo/docs1.png")),
+        reply_markup=keyboard.as_markup(),
+    )
+
+@about_router.callback_query(F.data == "start:about:education:docs:3")
+async def about_education_docs_3(callback: CallbackQuery):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(text="⬅️ Предыдущий документ", callback_data="start:about:education:docs:2")
+    keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
+    keyboard.button(text="⬅️ Назад к квалификации", callback_data="start:about:education")
+    keyboard.adjust(1)
+
+    await callback.answer()
+    await callback.message.edit_media(
+        media=InputMediaPhoto(media=FSInputFile("attachments/photo/docs2.png")),
         reply_markup=keyboard.as_markup(),
     )
