@@ -1,9 +1,9 @@
 from aiogram import Router, F
 from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery, FSInputFile, InputMediaPhoto
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from attachments import PHOTOS
+from bot.core.photo_cache import get_photo, save_photo_id
 
 from .about import about_router
 
@@ -29,19 +29,21 @@ START_BUTTONS.adjust(1)
 
 @start_router.message(CommandStart())
 async def start_command(message: Message):
-    await message.answer_photo(
-        photo=PHOTOS['IMG_4597.JPG'],
+    sent_message = await message.answer_photo(
+        photo=get_photo(message.bot.id, "main"),
         caption=START_CAPTION,
         reply_markup=START_BUTTONS.as_markup(),
     )
+    save_photo_id(message.bot.id, "main", sent_message)
 
 @start_router.callback_query(F.data == "start")
 async def start_callback(callback: CallbackQuery):
     await callback.answer()
-    await callback.message.edit_media(
-        media=InputMediaPhoto(media=PHOTOS['IMG_4597.JPG'], caption=START_CAPTION),
+    edited_message = await callback.message.edit_media(
+        media=InputMediaPhoto(media=get_photo(callback.bot.id, "main"), caption=START_CAPTION),
         reply_markup=START_BUTTONS.as_markup(),
     )
+    save_photo_id(callback.bot.id, "main", edited_message)
 
 @start_router.callback_query(F.data == "start:survey")
 async def start_survey(message: Message):
@@ -64,9 +66,9 @@ async def start_about(callback: CallbackQuery):
     keyboard.adjust(2, 1)
 
     await callback.answer()
-    await callback.message.edit_media(
+    edited_message = await callback.message.edit_media(
         media=InputMediaPhoto(
-            media=FSInputFile("attachments/photo/photo_2026-05-31_23-16-00.jpg"),
+            media=get_photo(callback.bot.id, "about"),
             caption=(
                 "Илья Мун — персональный тренер, КМС по бодибилдингу, "
                 "автор книг о фитнесе и создатель тренировочной системы MTR 10.\n\n"
@@ -78,3 +80,4 @@ async def start_about(callback: CallbackQuery):
         ),
         reply_markup=keyboard.as_markup(),
     )
+    save_photo_id(callback.bot.id, "about", edited_message)

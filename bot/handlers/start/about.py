@@ -1,6 +1,8 @@
 from aiogram import Router, F
-from aiogram.types import CallbackQuery, FSInputFile, InputMediaPhoto
+from aiogram.types import CallbackQuery, InputMediaPhoto
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+from bot.core.photo_cache import get_photo, save_photo_id
 
 
 about_router = Router(name="start.about")
@@ -17,9 +19,9 @@ async def about_education(callback: CallbackQuery):
     keyboard.adjust(2, 1)
 
     await callback.answer()
-    await callback.message.edit_media(
+    edited_message = await callback.message.edit_media(
         media=InputMediaPhoto(
-            media=FSInputFile("attachments/photo/photo_2026-05-31_23-36-57.jpg"),
+            media=get_photo(callback.bot.id, "education"),
             caption=(
                 "Квалификация, обучение и спортивный опыт:\n\n"
                 "— 15 лет в фитнесе и регулярной тренировочной практике;\n"
@@ -37,6 +39,7 @@ async def about_education(callback: CallbackQuery):
         ),
         reply_markup=keyboard.as_markup(),
     )
+    save_photo_id(callback.bot.id, "education", edited_message)
 
 @about_router.callback_query(F.data == "start:about:education:docs:0")
 async def about_education_docs_0(callback: CallbackQuery):
@@ -47,10 +50,11 @@ async def about_education_docs_0(callback: CallbackQuery):
     keyboard.adjust(1)
 
     await callback.answer()
-    await callback.message.edit_media(
-        media=InputMediaPhoto(media=FSInputFile("attachments/photo/photo_2026-05-31_23-47-58.jpg")),
+    edited_message = await callback.message.edit_media(
+        media=InputMediaPhoto(media=get_photo(callback.bot.id, "doc_0")),
         reply_markup=keyboard.as_markup(),
     )
+    save_photo_id(callback.bot.id, "doc_0", edited_message)
 
 @about_router.callback_query(F.data == "start:about:education:docs:1")
 async def about_education_docs_1(callback: CallbackQuery):
@@ -62,10 +66,11 @@ async def about_education_docs_1(callback: CallbackQuery):
     keyboard.adjust(2, 1)
 
     await callback.answer()
-    await callback.message.edit_media(
-        media=InputMediaPhoto(media=FSInputFile("attachments/photo/photo_2026-05-31_23-49-51.jpg")),
+    edited_message = await callback.message.edit_media(
+        media=InputMediaPhoto(media=get_photo(callback.bot.id, "doc_1")),
         reply_markup=keyboard.as_markup(),
     )
+    save_photo_id(callback.bot.id, "doc_1", edited_message)
 
 @about_router.callback_query(F.data == "start:about:education:docs:2")
 async def about_education_docs_2(callback: CallbackQuery):
@@ -77,10 +82,11 @@ async def about_education_docs_2(callback: CallbackQuery):
     keyboard.adjust(2, 1)
 
     await callback.answer()
-    await callback.message.edit_media(
-        media=InputMediaPhoto(media=FSInputFile("attachments/photo/docs1.png")),
+    edited_message = await callback.message.edit_media(
+        media=InputMediaPhoto(media=get_photo(callback.bot.id, "doc_2")),
         reply_markup=keyboard.as_markup(),
     )
+    save_photo_id(callback.bot.id, "doc_2", edited_message)
 
 @about_router.callback_query(F.data == "start:about:education:docs:3")
 async def about_education_docs_3(callback: CallbackQuery):
@@ -91,10 +97,11 @@ async def about_education_docs_3(callback: CallbackQuery):
     keyboard.adjust(1)
 
     await callback.answer()
-    await callback.message.edit_media(
-        media=InputMediaPhoto(media=FSInputFile("attachments/photo/docs2.png")),
+    edited_message = await callback.message.edit_media(
+        media=InputMediaPhoto(media=get_photo(callback.bot.id, "doc_3")),
         reply_markup=keyboard.as_markup(),
     )
+    save_photo_id(callback.bot.id, "doc_3", edited_message)
 
 @about_router.callback_query(F.data == "start:about:trains")
 async def about_trains(callback: CallbackQuery):
