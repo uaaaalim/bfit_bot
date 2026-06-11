@@ -6,9 +6,10 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bot.core.cache.photo_cache import get_photo, save_photo_id
 
 from .about import about_router
+from .results import results_router
 
 start_router = Router(name="start")
-start_router.include_routers(about_router)
+start_router.include_routers(about_router, results_router)
 
 START_CAPTION = (
     "Здравствуйте. Это бот Ильи, персонального тренера 🏋️\n\n"
