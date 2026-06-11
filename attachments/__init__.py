@@ -1,1 +1,1 @@
-from .attachments import PHOTOS, VIDEOS, AUDIO, FILES
+from .attachments import AUDIO, FILES, PHOTO_PATHS, VIDEOS
