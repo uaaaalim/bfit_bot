@@ -2,10 +2,39 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery, InputMediaPhoto
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.core.photo_cache import get_photo, save_photo_id
+from bot.core.cache.photo_cache import get_photo, save_photo_id
 
 
 about_router = Router(name="start.about")
+
+@about_router.callback_query(F.data == "start:about")
+async def about(callback: CallbackQuery):
+    keyboard = InlineKeyboardBuilder()
+
+    keyboard.button(text="🎓 Образование и квалификация", callback_data="start:about:education")
+    keyboard.button(text="📘 Подход к тренировкам", callback_data="start:about:trains")
+    keyboard.button(text="📸 Примеры работы", callback_data="start:results")
+    keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
+    keyboard.button(text="⬅️ Назад в главное меню", callback_data="start")
+
+    keyboard.adjust(2, 1)
+
+    await callback.answer()
+    edited_message = await callback.message.edit_media(
+        media=InputMediaPhoto(
+            media=get_photo(callback.bot.id, "about"),
+            caption=(
+                "Илья Мун — персональный тренер, КМС по бодибилдингу, "
+                "автор книг о фитнесе и создатель тренировочной системы MTR 10.\n\n"
+                "В фитнесе с 2011 года. Илья работает с мужчинами и женщинами разного уровня подготовки: "
+                "от новичков до тех, кто уже тренируется, но хочет более понятную систему и стабильный результат.\n\n"
+                "Главный принцип работы — не давать всем одну и ту же программу, а подбирать тренировки под цель, "
+                "опыт, ограничения и реальный образ жизни человека."
+            ),
+        ),
+        reply_markup=keyboard.as_markup(),
+    )
+    save_photo_id(callback.bot.id, "about", edited_message)
 
 @about_router.callback_query(F.data == "start:about:education")
 async def about_education(callback: CallbackQuery):
@@ -161,7 +190,7 @@ async def about_trains_how(callback: CallbackQuery):
 async def about_trains_progress(callback: CallbackQuery):
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text="🧠 Что такое MTR-10", callback_data="start:about:trains:mtr10")
-    keyboard.button(text="📸 Результаты учеников", callback_data="start:results")
+    keyboard.button(text="📸 Примеры работы", callback_data="start:results")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
     keyboard.button(text="⬅️ Назад", callback_data="start:about:trains")
     keyboard.adjust(1)
@@ -189,7 +218,7 @@ async def about_trains_progress(callback: CallbackQuery):
 @about_router.callback_query(F.data == "start:about:trains:mtr10")
 async def about_trains_mtr10(callback: CallbackQuery):
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="📸 Результаты учеников", callback_data="start:results")
+    keyboard.button(text="📸 Примеры работы", callback_data="start:results")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
     keyboard.button(text="⬅️ Назад", callback_data="start:about:trains")
     keyboard.adjust(1)
