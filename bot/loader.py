@@ -5,6 +5,7 @@ from aiogram import Dispatcher
 from bot.core.database import session_maker
 from bot.handlers import ROUTERS
 from bot.middlewares.database import DatabaseMiddleware
+from bot.middlewares.active_action import ActiveActionMiddleware
 from bot import Client
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,9 @@ async def load_routers(dp: Dispatcher) -> None:
     logger.info("{} routers are loaded".format(len(ROUTERS)))
 
 async def load_middlewares(dp: Dispatcher) -> None:
+    active_action_middleware = ActiveActionMiddleware()
+    dp.message.middleware(active_action_middleware)
+    dp.callback_query.middleware(active_action_middleware)
     dp.update.middleware(DatabaseMiddleware(session_maker=session_maker))
 
     logger.info("All middlewares are loaded")

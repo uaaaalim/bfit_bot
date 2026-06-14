@@ -1,11 +1,19 @@
 from aiogram import Router, F
-from aiogram.types import CallbackQuery, InputMediaPhoto
+from aiogram.types import CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.core.cache.photo_cache import get_photo, save_photo_id
+from bot.handlers.message_replace import remove_old_message
 
 
 about_router = Router(name="start.about")
+
+DOC_PHOTO_KEYS = (
+    "qualification_school",
+    "sport_forum_diploma",
+    "banzai_fitness_seminar",
+    "invictus_academy_certificate",
+)
 
 @about_router.callback_query(F.data == "start:about")
 async def about(callback: CallbackQuery):
@@ -18,118 +26,67 @@ async def about(callback: CallbackQuery):
 
     keyboard.adjust(2, 1)
 
-    await callback.answer()
-    edited_message = await callback.message.edit_media(
-        media=InputMediaPhoto(
-            media=get_photo(callback.bot.id, "about"),
-            caption=(
-                "Илья Мун — персональный тренер, КМС по бодибилдингу, "
-                "автор книг о фитнесе и создатель тренировочной системы MTR 10.\n\n"
-                "В фитнесе с 2011 года. Илья работает с мужчинами и женщинами разного уровня подготовки: "
-                "от новичков до тех, кто уже тренируется, но хочет более понятную систему и стабильный результат.\n\n"
-                "Главный принцип работы — не давать всем одну и ту же программу, а подбирать тренировки под цель, "
-                "опыт, ограничения и реальный образ жизни человека."
-            ),
+    old_message = await remove_old_message(callback)
+    sent_message = await old_message.answer_photo(
+        photo=get_photo(callback.bot.id, "about"),
+        caption=(
+            "Илья Мун — персональный тренер, КМС по бодибилдингу, "
+            "автор книг о фитнесе и создатель тренировочной системы MTR 10.\n\n"
+            "В фитнесе с 2011 года. Илья работает с мужчинами и женщинами разного уровня подготовки: "
+            "от новичков до тех, кто уже тренируется, но хочет более понятную систему и стабильный результат.\n\n"
+            "Главный принцип работы — не давать всем одну и ту же программу, а подбирать тренировки под цель, "
+            "опыт, ограничения и реальный образ жизни человека."
         ),
         reply_markup=keyboard.as_markup(),
     )
-    save_photo_id(callback.bot.id, "about", edited_message)
+    save_photo_id(callback.bot.id, "about", sent_message)
 
 @about_router.callback_query(F.data == "start:about:education")
 async def about_education(callback: CallbackQuery):
     keyboard = InlineKeyboardBuilder()
 
-    keyboard.button(text="📄 Показать документы", callback_data="start:about:education:docs:0")
+    keyboard.button(text="📄 Показать документы", callback_data="start:about:education:docs")
     keyboard.button(text="📘 Подход к тренировкам", callback_data="start:about:trains")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
     keyboard.button(text="🏆 Кто такой Илья", callback_data="start:about")
 
     keyboard.adjust(2, 1)
 
-    await callback.answer()
-    edited_message = await callback.message.edit_media(
-        media=InputMediaPhoto(
-            media=get_photo(callback.bot.id, "education"),
-            caption=(
-                "Квалификация, обучение и спортивный опыт:\n\n"
-                "— 15 лет в фитнесе и регулярной тренировочной практике;\n"
-                "— диплом профессиональной переподготовки World Class University по квалификации "
-                "“Тренер тренажёрного зала”;\n"
-                "— удостоверение о повышении квалификации в Высшей школе фитнеса и бодибилдинга по программе оптимизации "
-                "тренировочного процесса;\n"
-                "— сертификат по программе “Персональный тренер”;\n"
-                "— обучение в Invictus Academy;\n"
-                "— практический семинар Banzai Fitness по тренировкам ног и ягодиц;\n"
-                "— грамота World Class за высокий уровень сервиса.\n\n"
-                "Это подтверждает не только спортивный опыт, но и подход к подбору нагрузки, "
-                "технике и работе с людьми разного уровня."
-            ),
+    old_message = await remove_old_message(callback)
+    sent_message = await old_message.answer_photo(
+        photo=get_photo(callback.bot.id, "education"),
+        caption=(
+            "Квалификация, обучение и спортивный опыт:\n\n"
+            "— 15 лет в фитнесе и регулярной тренировочной практике;\n"
+            "— диплом профессиональной переподготовки World Class University по квалификации "
+            "“Тренер тренажёрного зала”;\n"
+            "— удостоверение о повышении квалификации в Высшей школе фитнеса и бодибилдинга по программе оптимизации "
+            "тренировочного процесса;\n"
+            "— сертификат по программе “Персональный тренер”;\n"
+            "— обучение в Invictus Academy;\n"
+            "— практический семинар Banzai Fitness по тренировкам ног и ягодиц;\n"
+            "— грамота World Class за высокий уровень сервиса.\n\n"
+            "Это подтверждает не только спортивный опыт, но и подход к подбору нагрузки, "
+            "технике и работе с людьми разного уровня."
         ),
         reply_markup=keyboard.as_markup(),
     )
-    save_photo_id(callback.bot.id, "education", edited_message)
+    save_photo_id(callback.bot.id, "education", sent_message)
 
-@about_router.callback_query(F.data == "start:about:education:docs:0")
-async def about_education_docs_0(callback: CallbackQuery):
+@about_router.callback_query(F.data == "start:about:education:docs")
+async def about_education_docs(callback: CallbackQuery):
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="➡️ Следующий документ", callback_data="start:about:education:docs:1")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
     keyboard.button(text="⬅️ Назад к квалификации", callback_data="start:about:education")
     keyboard.adjust(1)
 
-    await callback.answer()
-    edited_message = await callback.message.edit_media(
-        media=InputMediaPhoto(media=get_photo(callback.bot.id, "doc_0")),
-        reply_markup=keyboard.as_markup(),
-    )
-    save_photo_id(callback.bot.id, "doc_0", edited_message)
-
-@about_router.callback_query(F.data == "start:about:education:docs:1")
-async def about_education_docs_1(callback: CallbackQuery):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="⬅️ Предыдущий документ", callback_data="start:about:education:docs:0")
-    keyboard.button(text="➡️ Следующий документ", callback_data="start:about:education:docs:2")
-    keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-    keyboard.button(text="⬅️ Назад к квалификации", callback_data="start:about:education")
-    keyboard.adjust(2, 1)
-
-    await callback.answer()
-    edited_message = await callback.message.edit_media(
-        media=InputMediaPhoto(media=get_photo(callback.bot.id, "doc_1")),
-        reply_markup=keyboard.as_markup(),
-    )
-    save_photo_id(callback.bot.id, "doc_1", edited_message)
-
-@about_router.callback_query(F.data == "start:about:education:docs:2")
-async def about_education_docs_2(callback: CallbackQuery):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="⬅️ Предыдущий документ", callback_data="start:about:education:docs:1")
-    keyboard.button(text="➡️ Следующий документ", callback_data="start:about:education:docs:3")
-    keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-    keyboard.button(text="⬅️ Назад к квалификации", callback_data="start:about:education")
-    keyboard.adjust(2, 1)
-
-    await callback.answer()
-    edited_message = await callback.message.edit_media(
-        media=InputMediaPhoto(media=get_photo(callback.bot.id, "doc_2")),
-        reply_markup=keyboard.as_markup(),
-    )
-    save_photo_id(callback.bot.id, "doc_2", edited_message)
-
-@about_router.callback_query(F.data == "start:about:education:docs:3")
-async def about_education_docs_3(callback: CallbackQuery):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="⬅️ Предыдущий документ", callback_data="start:about:education:docs:2")
-    keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-    keyboard.button(text="⬅️ Назад к квалификации", callback_data="start:about:education")
-    keyboard.adjust(1)
-
-    await callback.answer()
-    edited_message = await callback.message.edit_media(
-        media=InputMediaPhoto(media=get_photo(callback.bot.id, "doc_3")),
-        reply_markup=keyboard.as_markup(),
-    )
-    save_photo_id(callback.bot.id, "doc_3", edited_message)
+    old_message = await remove_old_message(callback)
+    for photo_key in DOC_PHOTO_KEYS:
+        sent_message = await old_message.answer_photo(
+            photo=get_photo(callback.bot.id, photo_key),
+            reply_markup=keyboard.as_markup() if photo_key == DOC_PHOTO_KEYS[-1] else None,
+        )
+        save_photo_id(callback.bot.id, photo_key, sent_message)
 
 @about_router.callback_query(F.data == "start:about:trains")
 async def about_trains(callback: CallbackQuery):
@@ -142,9 +99,9 @@ async def about_trains(callback: CallbackQuery):
 
     keyboard.adjust(1)
 
-    await callback.answer()
-    await callback.message.edit_caption(
-        caption=(
+    old_message = await remove_old_message(callback)
+    await old_message.answer(
+        text=(
             "Подход к тренировкам\n\n"
             "Работа начинается не с готовой программы “для всех”, а со знакомства с человеком.\n\n"
             "Перед стартом Илья собирает основную информацию: цель, опыт тренировок, состояние здоровья, ограничения, "
@@ -168,9 +125,9 @@ async def about_trains_how(callback: CallbackQuery):
 
     keyboard.adjust(1)
 
-    await callback.answer()
-    await callback.message.edit_caption(
-        caption=(
+    old_message = await remove_old_message(callback)
+    await old_message.answer(
+        text=(
             "Как начинается работа\n\n"
             "Перед началом тренировок Илья знакомится с клиентом и собирает подробную информацию.\n\n"
             "Это нужно, чтобы понять:\n\n"
@@ -196,9 +153,9 @@ async def about_trains_progress(callback: CallbackQuery):
     keyboard.button(text="⬅️ Назад", callback_data="start:about:trains")
     keyboard.adjust(1)
 
-    await callback.answer()
-    await callback.message.edit_caption(
-        caption=(
+    old_message = await remove_old_message(callback)
+    await old_message.answer(
+        text=(
             "Как отслеживается прогресс\n\n"
             "После старта Илья фиксирует исходную точку и дальше отслеживает изменения.\n\n"
             "В зависимости от цели могут использоваться:\n\n"
@@ -224,9 +181,9 @@ async def about_trains_mtr10(callback: CallbackQuery):
     keyboard.button(text="⬅️ Назад", callback_data="start:about:trains")
     keyboard.adjust(1)
 
-    await callback.answer()
-    await callback.message.edit_caption(
-        caption=(
+    old_message = await remove_old_message(callback)
+    await old_message.answer(
+        text=(
             "MTR-10\n\n"
             "MTR-10, или Muscle Tissue Recruitment, — авторский протокол Ильи, основанный на контроле движения, "
             "технике и точном включении целевых мышц.\n\n"
