@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from utils.message_replace import remove_old_message
+from bot.handlers.message_replace import remove_old_message
 
 results_router = Router(name="start.results")
 
