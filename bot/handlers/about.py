@@ -3,7 +3,7 @@ from aiogram.types import CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.core.cache.photo_cache import get_photo, save_photo_id
-from bot.handlers.message_replace import remove_old_message
+from utils.message_replace import remove_old_message
 
 
 about_router = Router(name="start.about")

@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.core.cache.photo_cache import get_photo, save_photo_id
-from bot.handlers.message_replace import remove_old_message
+from utils.message_replace import remove_old_message
 
 from .about import about_router
 from .results import results_router
