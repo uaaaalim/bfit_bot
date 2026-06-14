@@ -13,9 +13,8 @@ async def about(callback: CallbackQuery):
 
     keyboard.button(text="🎓 Образование и квалификация", callback_data="start:about:education")
     keyboard.button(text="📘 Подход к тренировкам", callback_data="start:about:trains")
-    keyboard.button(text="📸 Примеры работы", callback_data="start:results_from_about")
+    keyboard.button(text="📸 Примеры работы", callback_data="start:results")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-    keyboard.button(text="⬅️ Назад в главное меню", callback_data="start")
 
     keyboard.adjust(2, 1)
 
@@ -43,7 +42,7 @@ async def about_education(callback: CallbackQuery):
     keyboard.button(text="📄 Показать документы", callback_data="start:about:education:docs:0")
     keyboard.button(text="📘 Подход к тренировкам", callback_data="start:about:trains")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-    keyboard.button(text="⬅️ Назад", callback_data="start:about")
+    keyboard.button(text="🏆 Кто такой Илья", callback_data="start:about")
 
     keyboard.adjust(2, 1)
 
@@ -139,7 +138,8 @@ async def about_trains(callback: CallbackQuery):
     keyboard.button(text="📊 Как отслеживается прогресс", callback_data="start:about:trains:progress")
     keyboard.button(text="🧠 Авторская система MTR-10", callback_data="start:about:trains:mtr10")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-    keyboard.button(text="⬅️ Назад", callback_data="start:about")
+    keyboard.button(text="🏆 Кто такой Илья", callback_data="start:about")
+
     keyboard.adjust(1)
 
     await callback.answer()
@@ -165,6 +165,7 @@ async def about_trains_how(callback: CallbackQuery):
     keyboard.button(text="🧠 Что такое MTR-10", callback_data="start:about:trains:mtr10")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
     keyboard.button(text="⬅️ Назад", callback_data="start:about:trains")
+
     keyboard.adjust(1)
 
     await callback.answer()
@@ -190,7 +191,7 @@ async def about_trains_how(callback: CallbackQuery):
 async def about_trains_progress(callback: CallbackQuery):
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text="🧠 Что такое MTR-10", callback_data="start:about:trains:mtr10")
-    keyboard.button(text="📸 Примеры работы", callback_data="start:results_from_about_trains_progress")
+    keyboard.button(text="📸 Примеры работы", callback_data="start:results")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
     keyboard.button(text="⬅️ Назад", callback_data="start:about:trains")
     keyboard.adjust(1)
@@ -218,7 +219,7 @@ async def about_trains_progress(callback: CallbackQuery):
 @about_router.callback_query(F.data == "start:about:trains:mtr10")
 async def about_trains_mtr10(callback: CallbackQuery):
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="📸 Примеры работы", callback_data="start:results_from_about_trains_mtr10")
+    keyboard.button(text="📸 Примеры работы", callback_data="start:results")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
     keyboard.button(text="⬅️ Назад", callback_data="start:about:trains")
     keyboard.adjust(1)
