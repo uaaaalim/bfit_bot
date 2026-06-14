@@ -84,9 +84,26 @@ async def about_education_docs(callback: CallbackQuery):
     for photo_key in DOC_PHOTO_KEYS:
         sent_message = await old_message.answer_photo(
             photo=get_photo(callback.bot.id, photo_key),
-            reply_markup=keyboard.as_markup() if photo_key == DOC_PHOTO_KEYS[-1] else None,
         )
         save_photo_id(callback.bot.id, photo_key, sent_message)
+
+    await old_message.answer(
+        text=(
+            "Квалификация, обучение и спортивный опыт:\n\n"
+            "— 15 лет в фитнесе и регулярной тренировочной практике;\n"
+            "— диплом профессиональной переподготовки World Class University по квалификации "
+            "“Тренер тренажёрного зала”;\n"
+            "— удостоверение о повышении квалификации в Высшей школе фитнеса и бодибилдинга по программе оптимизации "
+            "тренировочного процесса;\n"
+            "— сертификат по программе “Персональный тренер”;\n"
+            "— обучение в Invictus Academy;\n"
+            "— практический семинар Banzai Fitness по тренировкам ног и ягодиц;\n"
+            "— грамота World Class за высокий уровень сервиса.\n\n"
+            "Это подтверждает не только спортивный опыт, но и подход к подбору нагрузки, "
+            "технике и работе с людьми разного уровня."
+        ),
+        reply_markup=keyboard.as_markup()
+    )
 
 @about_router.callback_query(F.data == "start:about:trains")
 async def about_trains(callback: CallbackQuery):
