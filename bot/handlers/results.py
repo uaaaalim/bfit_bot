@@ -2,6 +2,8 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from bot.handlers.message_replace import remove_old_message
+
 results_router = Router(name="start.results")
 
 @results_router.callback_query(F.data == "start:results")
@@ -23,4 +25,5 @@ async def results(callback: CallbackQuery):
 
     keyboard.adjust(2, 1)
 
-    await callback.message.edit_caption(caption=message, reply_markup=keyboard.as_markup())
+    old_message = await remove_old_message(callback)
+    await old_message.answer(text=message, reply_markup=keyboard.as_markup())
