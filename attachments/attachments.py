@@ -1,15 +1,15 @@
 from pathlib import Path
 
 PHOTO_PATHS = {
-    "main": Path("attachments/photo/IMG_4597.JPG"),
-    "about": Path("attachments/photo/photo_2026-05-31_23-16-00.jpg"),
-    "education": Path("attachments/photo/photo_2026-05-31_23-36-57.jpg"),
-    "doc_0": Path("attachments/photo/photo_2026-05-31_23-47-58.jpg"),
-    "doc_1": Path("attachments/photo/photo_2026-05-31_23-49-51.jpg"),
-    "doc_2": Path("attachments/photo/docs1.png"),
-    "doc_3": Path("attachments/photo/docs2.png"),
+    "main": Path("attachments/photo/main.jpg"),
+    "about": Path("attachments/photo/about.jpg"),
+    "education": Path("attachments/photo/education.jpg"),
+    "qualification_school": Path("attachments/photo/qualification_school.jpg"),
+    "sport_forum_diploma": Path("attachments/photo/sport_forum_diploma.jpg"),
+    "banzai_fitness_seminar": Path("attachments/photo/banzai_fitness_seminar.png"),
+    "invictus_academy_certificate": Path("attachments/photo/invictus_academy_certificate.png"),
 }
 
-FILES = {}
 AUDIO = {}
+FILES = {}
 VIDEOS = {}

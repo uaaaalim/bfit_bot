@@ -8,6 +8,13 @@ from bot.handlers.message_replace import remove_old_message
 
 about_router = Router(name="start.about")
 
+DOC_PHOTO_KEYS = (
+    "qualification_school",
+    "sport_forum_diploma",
+    "banzai_fitness_seminar",
+    "invictus_academy_certificate",
+)
+
 @about_router.callback_query(F.data == "start:about")
 async def about(callback: CallbackQuery):
     keyboard = InlineKeyboardBuilder()
@@ -38,7 +45,7 @@ async def about(callback: CallbackQuery):
 async def about_education(callback: CallbackQuery):
     keyboard = InlineKeyboardBuilder()
 
-    keyboard.button(text="📄 Показать документы", callback_data="start:about:education:docs:0")
+    keyboard.button(text="📄 Показать документы", callback_data="start:about:education:docs")
     keyboard.button(text="📘 Подход к тренировкам", callback_data="start:about:trains")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
     keyboard.button(text="🏆 Кто такой Илья", callback_data="start:about")
@@ -66,67 +73,20 @@ async def about_education(callback: CallbackQuery):
     )
     save_photo_id(callback.bot.id, "education", sent_message)
 
-@about_router.callback_query(F.data == "start:about:education:docs:0")
-async def about_education_docs_0(callback: CallbackQuery):
+@about_router.callback_query(F.data == "start:about:education:docs")
+async def about_education_docs(callback: CallbackQuery):
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="➡️ Следующий документ", callback_data="start:about:education:docs:1")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
     keyboard.button(text="⬅️ Назад к квалификации", callback_data="start:about:education")
     keyboard.adjust(1)
 
     old_message = await remove_old_message(callback)
-    sent_message = await old_message.answer_photo(
-        photo=get_photo(callback.bot.id, "doc_0"),
-        reply_markup=keyboard.as_markup(),
-    )
-    save_photo_id(callback.bot.id, "doc_0", sent_message)
-
-@about_router.callback_query(F.data == "start:about:education:docs:1")
-async def about_education_docs_1(callback: CallbackQuery):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="⬅️ Предыдущий документ", callback_data="start:about:education:docs:0")
-    keyboard.button(text="➡️ Следующий документ", callback_data="start:about:education:docs:2")
-    keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-    keyboard.button(text="⬅️ Назад к квалификации", callback_data="start:about:education")
-    keyboard.adjust(2, 1)
-
-    old_message = await remove_old_message(callback)
-    sent_message = await old_message.answer_photo(
-        photo=get_photo(callback.bot.id, "doc_1"),
-        reply_markup=keyboard.as_markup(),
-    )
-    save_photo_id(callback.bot.id, "doc_1", sent_message)
-
-@about_router.callback_query(F.data == "start:about:education:docs:2")
-async def about_education_docs_2(callback: CallbackQuery):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="⬅️ Предыдущий документ", callback_data="start:about:education:docs:1")
-    keyboard.button(text="➡️ Следующий документ", callback_data="start:about:education:docs:3")
-    keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-    keyboard.button(text="⬅️ Назад к квалификации", callback_data="start:about:education")
-    keyboard.adjust(2, 1)
-
-    old_message = await remove_old_message(callback)
-    sent_message = await old_message.answer_photo(
-        photo=get_photo(callback.bot.id, "doc_2"),
-        reply_markup=keyboard.as_markup(),
-    )
-    save_photo_id(callback.bot.id, "doc_2", sent_message)
-
-@about_router.callback_query(F.data == "start:about:education:docs:3")
-async def about_education_docs_3(callback: CallbackQuery):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="⬅️ Предыдущий документ", callback_data="start:about:education:docs:2")
-    keyboard.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-    keyboard.button(text="⬅️ Назад к квалификации", callback_data="start:about:education")
-    keyboard.adjust(1)
-
-    old_message = await remove_old_message(callback)
-    sent_message = await old_message.answer_photo(
-        photo=get_photo(callback.bot.id, "doc_3"),
-        reply_markup=keyboard.as_markup(),
-    )
-    save_photo_id(callback.bot.id, "doc_3", sent_message)
+    for photo_key in DOC_PHOTO_KEYS:
+        sent_message = await old_message.answer_photo(
+            photo=get_photo(callback.bot.id, photo_key),
+            reply_markup=keyboard.as_markup() if photo_key == DOC_PHOTO_KEYS[-1] else None,
+        )
+        save_photo_id(callback.bot.id, photo_key, sent_message)
 
 @about_router.callback_query(F.data == "start:about:trains")
 async def about_trains(callback: CallbackQuery):
