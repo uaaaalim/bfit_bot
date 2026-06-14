@@ -1,9 +1,10 @@
 from aiogram import Router, F
 from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery, InputMediaPhoto
+from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.core.cache.photo_cache import get_photo, save_photo_id
+from bot.handlers.message_replace import remove_old_message
 
 from .about import about_router
 from .results import results_router
@@ -39,12 +40,13 @@ async def start_command(message: Message):
 
 @start_router.callback_query(F.data == "start")
 async def start_callback(callback: CallbackQuery):
-    await callback.answer()
-    edited_message = await callback.message.edit_media(
-        media=InputMediaPhoto(media=get_photo(callback.bot.id, "main"), caption=START_CAPTION),
+    old_message = await remove_old_message(callback)
+    sent_message = await old_message.answer_photo(
+        photo=get_photo(callback.bot.id, "main"),
+        caption=START_CAPTION,
         reply_markup=START_BUTTONS.as_markup(),
     )
-    save_photo_id(callback.bot.id, "main", edited_message)
+    save_photo_id(callback.bot.id, "main", sent_message)
 
 @start_router.callback_query(F.data == "start:survey")
 async def start_survey(message: Message):
