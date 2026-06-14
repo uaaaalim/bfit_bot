@@ -22,7 +22,7 @@ START_CAPTION = (
 START_BUTTONS = InlineKeyboardBuilder()
 
 START_BUTTONS.button(text="🎯 Подобрать формат занятий", callback_data="start:survey")
-START_BUTTONS.button(text="📸 Примеры работы", callback_data="start:results")
+START_BUTTONS.button(text="📸 Примеры работы", callback_data="start:results_from_start")
 START_BUTTONS.button(text="🏆 Кто такой Илья", callback_data="start:about")
 
 START_BUTTONS.adjust(1)
