@@ -5,7 +5,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.core.active_action import finish_action, get_active_action, has_active_action, start_action
 from bot.core.cache.photo_cache import get_photo, save_photo_id
-from bot.handlers.message_replace import remove_old_message
+from utils.message_replace import remove_old_message
 
 from .about import about_router
 from .results import results_router
