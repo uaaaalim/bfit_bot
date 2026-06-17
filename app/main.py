@@ -16,7 +16,7 @@ async def main() -> None:
 
     try:
         logger.info("Checking cached attachments...")
-        await check_attachments(bot, dp['attachments_cache'])
+        await check_attachments(bot)
 
         logger.info("Connecting to services...")
         await dp.start_polling(bot)

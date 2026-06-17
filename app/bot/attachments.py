@@ -4,21 +4,22 @@ from pathlib import Path
 from aiogram import Bot
 from aiogram.types import FSInputFile
 
-from app.bot.cache.attachments import AttachmentsMemoryCache
+from app.bot.cache import attachments_cache
 from app.config import get_settings
 from app.db import get_session
 from app.db.models import FileType
 from app.db.repositories import attachments_repo
 
 PHOTOS = {
-    "main_menu": Path("app/attachments/images/main_menu.jpg")
+    "main_menu": Path("app/attachments/images/main_menu.jpg"),
+    "about": Path("app/attachments/images/about.jpg"),
 }
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-async def check_attachments(bot: Bot, memory_cache: AttachmentsMemoryCache) -> None:
+async def check_attachments(bot: Bot) -> None:
     async with get_session() as session:
         for photo_path in PHOTOS.values():
             normalized_path = photo_path.as_posix()
@@ -73,7 +74,7 @@ async def check_attachments(bot: Bot, memory_cache: AttachmentsMemoryCache) -> N
 
         media_items = await attachments_repo.get_all(session)
 
-        memory_cache.load_many(
+        attachments_cache.load_many(
             {
                 media.path: media.media_id
                 for media in media_items

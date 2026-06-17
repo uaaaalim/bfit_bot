@@ -1,0 +1,32 @@
+from aiogram import Router, F
+from aiogram.types import CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+from app.bot.cache import attachments_cache
+from app.utils.message_resolver import remove_old_message
+
+about_router = Router(name="about")
+
+@about_router.callback_query(F.data == "about")
+async def about_button(callback: CallbackQuery):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(text="🎓 Образование и квалификация", callback_data="qualifications")
+    keyboard.button(text="📘 Подход к тренировкам", callback_data="approach")
+    keyboard.button(text="📸 Примеры работы", callback_data="results")
+    keyboard.button(text="🎯 Подобрать формат занятий", callback_data="survey")
+    keyboard.adjust(2, 1)
+
+    await callback.answer()
+    old_message = await remove_old_message(callback)
+    await old_message.answer_photo(
+        photo=attachments_cache.get("app/attachments/images/about.jpg"),
+        caption=(
+            "Илья Мун — персональный тренер, КМС по бодибилдингу, "
+            "автор книг о фитнесе и создатель тренировочной системы MTR 10.\n\n"
+            "В фитнесе с 2011 года. Илья работает с мужчинами и женщинами разного уровня подготовки: "
+            "от новичков до тех, кто уже тренируется, но хочет более понятную систему и стабильный результат.\n\n"
+            "Главный принцип работы — не давать всем одну и ту же программу, а подбирать тренировки под цель, "
+            "опыт, ограничения и реальный образ жизни человека."
+        ),
+        reply_markup=keyboard.as_markup(),
+    )
