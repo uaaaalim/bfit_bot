@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Attachments, FileType
@@ -83,3 +83,22 @@ async def create_or_update(
     await session.flush()
 
     return item
+
+
+async def delete_by_paths(
+    session: AsyncSession,
+    *,
+    bot_id: int,
+    paths: set[str],
+) -> int:
+    if not paths:
+        return 0
+
+    stmt = delete(Attachments).where(
+        Attachments.bot_id == bot_id,
+        Attachments.path.in_(paths),
+    )
+
+    result = await session.execute(stmt)
+
+    return result.rowcount or 0
