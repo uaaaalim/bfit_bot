@@ -8,6 +8,7 @@ from app.db.base import Base, TimestampMixin
 
 class FileType(StrEnum):
     IMAGE = "image"
+    VIDEO = "video"
 
 
 class Attachments(Base, TimestampMixin):
@@ -34,7 +35,7 @@ class Attachments(Base, TimestampMixin):
         nullable=False,
     )
 
-    media_id: Mapped[str] = mapped_column(
+    file_id: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
     )
