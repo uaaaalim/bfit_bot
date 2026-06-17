@@ -1,6 +1,6 @@
-from .media_cache import FileType, MediaCache
+from .attachments import FileType, Attachments
 
 __all__ = [
     'FileType',
-    'MediaCache',
+    'Attachments',
 ]

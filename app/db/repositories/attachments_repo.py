@@ -1,18 +1,18 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.media_cache import MediaCache, FileType
+from app.db.models.attachments import Attachments, FileType
 
 
-async def get_all(session: AsyncSession) -> list[MediaCache]:
-    stmt = select(MediaCache).order_by(MediaCache.id)
+async def get_all(session: AsyncSession) -> list[Attachments]:
+    stmt = select(Attachments).order_by(Attachments.id)
 
     result = await session.execute(stmt)
     return list(result.scalars().all())
 
 
-async def get_by_path(session: AsyncSession, path: str) -> MediaCache | None:
-    stmt = select(MediaCache).where(MediaCache.path == path)
+async def get_by_path(session: AsyncSession, path: str) -> Attachments | None:
+    stmt = select(Attachments).where(Attachments.path == path)
 
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
@@ -25,8 +25,8 @@ async def create(
     path: str,
     type_: FileType,
     file_id: str,
-) -> MediaCache:
-    media = MediaCache(
+) -> Attachments:
+    media = Attachments(
         bot_id=bot_id,
         path=path,
         file_type=type_,
@@ -41,12 +41,12 @@ async def create(
 
 async def update(
     session: AsyncSession,
-    media: MediaCache,
+    media: Attachments,
     *,
     path: str | None = None,
     type_: str | None = None,
     file_id: str | None = None,
-) -> MediaCache:
+) -> Attachments:
     if path is not None:
         media.path = path
 

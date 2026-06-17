@@ -8,7 +8,7 @@ from app.bot.cache.attachments import AttachmentsMemoryCache
 from app.config import get_settings
 from app.db import get_session
 from app.db.models import FileType
-from app.db.repositories import media_cache_repo
+from app.db.repositories import attachments_repo
 
 PHOTOS = {
     "main_menu": Path("app/attachments/images/main_menu.jpg")
@@ -23,7 +23,7 @@ async def check_attachments(bot: Bot, memory_cache: AttachmentsMemoryCache) -> N
         for photo_path in PHOTOS.values():
             normalized_path = photo_path.as_posix()
 
-            cached_media = await media_cache_repo.get_by_path(
+            cached_media = await attachments_repo.get_by_path(
                 session=session,
                 path=normalized_path,
             )
@@ -58,7 +58,7 @@ async def check_attachments(bot: Bot, memory_cache: AttachmentsMemoryCache) -> N
 
             file_id = sent_message.photo[-1].file_id
 
-            await media_cache_repo.create(
+            await attachments_repo.create(
                 session=session,
                 bot_id=bot.id,
                 path=normalized_path,
@@ -71,7 +71,7 @@ async def check_attachments(bot: Bot, memory_cache: AttachmentsMemoryCache) -> N
                 normalized_path,
             )
 
-        media_items = await media_cache_repo.get_all(session)
+        media_items = await attachments_repo.get_all(session)
 
         memory_cache.load_many(
             {

@@ -10,8 +10,8 @@ class FileType(StrEnum):
     IMAGE = "image"
 
 
-class MediaCache(Base, TimestampMixin):
-    __tablename__ = "media_cache"
+class Attachments(Base, TimestampMixin):
+    __tablename__ = "attachments"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
