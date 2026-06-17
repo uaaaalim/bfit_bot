@@ -13,6 +13,11 @@ from app.db.repositories import attachments_repo
 PHOTOS = {
     "main_menu": Path("app/attachments/images/main_menu.jpg"),
     "about": Path("app/attachments/images/about.jpg"),
+    "qualification": Path("app/attachments/images/qualification.jpg"),
+    "banzai_fitness_seminar": Path("app/attachments/images/documents/banzai_fitness_seminar.png"),
+    "invictus_academy_certificate": Path("app/attachments/images/documents/invictus_academy_certificate.png"),
+    "qualification_school": Path("app/attachments/images/documents/qualification_school.jpg"),
+    "sport_forum_diploma": Path("app/attachments/images/documents/sport_forum_diploma.jpg"),
 }
 
 settings = get_settings()
