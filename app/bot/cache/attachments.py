@@ -1,6 +1,13 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class AttachmentsMemoryCache:
     def __init__(self) -> None:
         self._items: dict[str, str] = {}
+
+        logger.info("Attachments cache initialized")
 
     def get(self, key: str) -> str | None:
         return self._items.get(key)
