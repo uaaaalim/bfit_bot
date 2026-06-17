@@ -1,1 +1,0 @@
-"""Grouped informational menu buttons."""
