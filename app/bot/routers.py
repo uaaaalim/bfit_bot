@@ -1,5 +1,7 @@
 from aiogram import Router
 
-ROUTERS: list[Router] = [
+from app.bot.handlers.main import main_router
 
+ROUTERS: list[Router] = [
+    main_router
 ]
