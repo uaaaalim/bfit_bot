@@ -1,6 +1,7 @@
 import logging
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
@@ -15,12 +16,14 @@ logger = logging.getLogger(__name__)
 
 def create_bot() -> Bot:
     return Bot(
-        token=settings.bot_token,
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True,
+        token=settings.bot_token.get_secret_value(),
+        default=DefaultBotProperties(
+            parse_mode=ParseMode.HTML,
+            link_preview_is_disabled=True
+        )
     )
 
-def setup_routers(dp: Dispatcher) -> None:
+def _setup_routers(dp: Dispatcher) -> None:
     for router in ROUTERS:
         dp.include_router(router)
 
@@ -33,6 +36,6 @@ def setup_dispatcher() -> Dispatcher:
     dp.update.middleware(DbSessionMiddleware(session_factory=session_factory))
 
     # routers
-    setup_routers(dp)
+    _setup_routers(dp)
 
     return dp
