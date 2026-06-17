@@ -24,7 +24,7 @@ MAIN_BUTTONS.button(text="🏆 Кто такой Илья", callback_data="about
 MAIN_BUTTONS.adjust(1)
 
 
-@main_router.message(CommandStart)
+@main_router.message(CommandStart())
 async def start_command(message: types.Message) -> None:
     await message.answer_photo(
         photo=attachments_cache.get("app/attachments/images/main_menu.jpg"),

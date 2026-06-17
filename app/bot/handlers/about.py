@@ -8,10 +8,10 @@ from app.utils.message_resolver import remove_old_message
 about_router = Router(name="about")
 
 @about_router.callback_query(F.data == "about")
-async def about_button(callback: CallbackQuery):
+async def about_button(callback: CallbackQuery) -> None:
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text="🎓 Образование и квалификация", callback_data="qualifications")
-    keyboard.button(text="📘 Подход к тренировкам", callback_data="approach")
+    keyboard.button(text="📘 Подход к тренировкам", callback_data="about:approach")
     keyboard.button(text="📸 Примеры работы", callback_data="results")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="survey")
     keyboard.adjust(2, 1)
