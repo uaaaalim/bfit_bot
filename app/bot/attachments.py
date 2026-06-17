@@ -20,6 +20,8 @@ settings = get_settings()
 class AttachmentFile:
     path: Path
     type: FileType
+    width: int | None = None
+    height: int | None = None
 
     @property
     def normalized_path(self) -> str:
@@ -39,7 +41,7 @@ ATTACHMENTS: list[AttachmentFile] = [
     # RESULTS
     AttachmentFile(Path("app/attachments/results/photo_2026-06-17_23-14-47.jpg"), FileType.IMAGE),
     AttachmentFile(Path("app/attachments/results/photo_2026-06-17_23-16-33.jpg"), FileType.IMAGE),
-    AttachmentFile(Path("app/attachments/results/video1.mp4"), FileType.VIDEO),
+    AttachmentFile(Path("app/attachments/results/video1.mp4"), FileType.VIDEO, width=720, height=1280),
     AttachmentFile(Path("app/attachments/results/video2.mp4"), FileType.VIDEO),
 ]
 
@@ -72,6 +74,8 @@ async def upload_attachment(
             chat_id=settings.media_check_victim_id,
             video=file,
             caption=f"Cached new video: {normalized_path}",
+            width=attachment.width,
+            height=attachment.height,
         )
 
         if sent_message.video is None:
