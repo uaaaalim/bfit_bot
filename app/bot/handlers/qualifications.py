@@ -19,7 +19,7 @@ async def qualifications_button(callback: CallbackQuery) -> None:
     await callback.answer()
     old_message = await remove_old_message(callback)
     await old_message.answer_photo(
-        photo=attachments_cache.get("app/attachments/images/qualification.jpg"),
+        photo=attachments_cache.get("app/attachments/qualification.jpg"),
         caption=(
             "Квалификация, обучение и спортивный опыт:\n\n"
             "— 15 лет в фитнесе и регулярной тренировочной практике;\n"
@@ -46,11 +46,11 @@ async def documents_button(callback: CallbackQuery) -> None:
     keyboard.adjust(1)
 
     media = [
-        InputMediaPhoto(media=attachments_cache.get("app/attachments/images/documents/banzai_fitness_seminar.png")),
+        InputMediaPhoto(media=attachments_cache.get("app/attachments/documents/banzai_fitness_seminar.png")),
         InputMediaPhoto(
-            media=attachments_cache.get("app/attachments/images/documents/invictus_academy_certificate.png")),
-        InputMediaPhoto(media=attachments_cache.get("app/attachments/images/documents/qualification_school.jpg")),
-        InputMediaPhoto(media=attachments_cache.get("app/attachments/images/documents/sport_forum_diploma.jpg")),
+            media=attachments_cache.get("app/attachments/documents/invictus_academy_certificate.png")),
+        InputMediaPhoto(media=attachments_cache.get("app/attachments/documents/qualification_school.jpg")),
+        InputMediaPhoto(media=attachments_cache.get("app/attachments/documents/sport_forum_diploma.jpg")),
     ]
 
     await callback.answer()

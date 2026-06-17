@@ -80,7 +80,7 @@ async def tracking_button(callback: CallbackQuery) -> None:
 
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text="🧠 Что такое MTR-10", callback_data=f"{back_to_approach}:approach:mtr10")
-    keyboard.button(text="📸 Примеры работы", callback_data="results")
+    keyboard.button(text="📸 Примеры работы", callback_data=f"{back_to_approach}:approach:tracking:results:1")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="survey")
     keyboard.button(text="⬅️ Назад", callback_data=f"{back_to_approach}:approach")
     keyboard.adjust(1)
@@ -111,7 +111,7 @@ async def mtr10_button(callback: CallbackQuery) -> None:
     back_to_approach = callback.data.split(":")[0]
 
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="📸 Примеры работы", callback_data="results")
+    keyboard.button(text="📸 Примеры работы", callback_data=f"{back_to_approach}:approach:mtr10:results:1")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="survey")
     keyboard.button(text="⬅️ Назад", callback_data=f"{back_to_approach}:approach")
     keyboard.adjust(1)

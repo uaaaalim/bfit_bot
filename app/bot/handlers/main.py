@@ -19,7 +19,7 @@ MAIN_MESSAGE = (
 
 MAIN_BUTTONS = InlineKeyboardBuilder()
 MAIN_BUTTONS.button(text="🎯 Подобрать формат занятий", callback_data="survey")
-MAIN_BUTTONS.button(text="📸 Примеры работы", callback_data="results")
+MAIN_BUTTONS.button(text="📸 Примеры работы", callback_data="main_menu:results:1")
 MAIN_BUTTONS.button(text="🏆 Кто такой Илья", callback_data="about")
 MAIN_BUTTONS.adjust(1)
 
@@ -27,7 +27,7 @@ MAIN_BUTTONS.adjust(1)
 @main_router.message(CommandStart())
 async def start_command(message: types.Message) -> None:
     await message.answer_photo(
-        photo=attachments_cache.get("app/attachments/images/main_menu.jpg"),
+        photo=attachments_cache.get("app/attachments/main_menu.jpg"),
         caption=MAIN_MESSAGE,
         reply_markup=MAIN_BUTTONS.as_markup(),
     )
@@ -37,7 +37,7 @@ async def start_button(callback: CallbackQuery) -> None:
     await callback.answer()
     old_message = await remove_old_message(callback)
     await old_message.answer_photo(
-        photo=attachments_cache.get("app/attachments/images/main_menu.jpg"),
+        photo=attachments_cache.get("app/attachments/main_menu.jpg"),
         caption=MAIN_MESSAGE,
         reply_markup=MAIN_BUTTONS.as_markup(),
     )

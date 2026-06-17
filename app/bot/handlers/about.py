@@ -12,14 +12,14 @@ async def about_button(callback: CallbackQuery) -> None:
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text="🎓 Образование и квалификация", callback_data="qualifications")
     keyboard.button(text="📘 Подход к тренировкам", callback_data="about:approach")
-    keyboard.button(text="📸 Примеры работы", callback_data="results")
+    keyboard.button(text="📸 Примеры работы", callback_data="about:results:1")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="survey")
     keyboard.adjust(2, 1)
 
     await callback.answer()
     old_message = await remove_old_message(callback)
     await old_message.answer_photo(
-        photo=attachments_cache.get("app/attachments/images/about.jpg"),
+        photo=attachments_cache.get("app/attachments/about.jpg"),
         caption=(
             "Илья Мун — персональный тренер, КМС по бодибилдингу, "
             "автор книг о фитнесе и создатель тренировочной системы MTR 10.\n\n"
