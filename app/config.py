@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     postgres_db: str = Field(alias="POSTGRES_DB")
 
     admin_ids: str = Field(default="", alias="ADMIN_IDS")
+    media_check_victim_id: int = Field(alias="MEDIA_CHECK_VICTIM_ID")
 
     model_config = SettingsConfigDict(
         env_file=".env",

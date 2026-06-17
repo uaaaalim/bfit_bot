@@ -5,6 +5,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
+from app.bot.cache.attachments import AttachmentsMemoryCache
 from app.bot.middlewares.db import DbSessionMiddleware
 from app.bot.routers import ROUTERS
 from app.config import get_settings
@@ -34,6 +35,9 @@ def setup_dispatcher() -> Dispatcher:
 
     # middlewares
     dp.update.middleware(DbSessionMiddleware(session_factory=session_factory))
+
+    # cache
+    dp['attachments_cache'] = AttachmentsMemoryCache()
 
     # routers
     _setup_routers(dp)

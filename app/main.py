@@ -1,5 +1,6 @@
 import logging
 
+from app.bot.attachments import check_attachments
 from app.bot.setup import create_bot, setup_dispatcher
 from app.logger import setup_logging
 from app.db.session import engine as db_engine
@@ -14,8 +15,10 @@ async def main() -> None:
     dp = setup_dispatcher()
 
     try:
-        logger.info("Connecting to services...")
+        logger.info("Checking cached attachments...")
+        await check_attachments(bot, dp['attachments_cache'])
 
+        logger.info("Connecting to services...")
         await dp.start_polling(bot)
     except Exception as e:
         logger.exception("An error occurred while running: %s", e)
