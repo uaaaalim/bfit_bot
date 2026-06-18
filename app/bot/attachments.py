@@ -43,6 +43,9 @@ ATTACHMENTS: list[AttachmentFile] = [
     AttachmentFile(Path("app/attachments/results/photo_2026-06-17_23-16-33.jpg"), FileType.IMAGE),
     AttachmentFile(Path("app/attachments/results/video1.mp4"), FileType.VIDEO, width=720, height=1280),
     AttachmentFile(Path("app/attachments/results/video2.mp4"), FileType.VIDEO),
+
+    # SURVEY
+    AttachmentFile(Path("app/attachments/survey/IMG_7790.JPG"), FileType.IMAGE)
 ]
 
 
