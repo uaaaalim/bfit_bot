@@ -18,7 +18,8 @@ async def main() -> None:
         logger.info("Checking cached attachments...")
         await check_attachments(bot)
 
-        logger.info("Connecting to services...")
+        logger.info("Connecting to Telegram...")
+        await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(bot)
     except Exception as e:
         logger.exception("An error occurred while running: %s", e)
