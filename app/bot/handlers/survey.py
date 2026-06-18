@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -11,6 +11,47 @@ from app.db.repositories import users_repo
 from app.utils.message_resolver import remove_old_message
 
 survey_router = Router(name="survey")
+
+
+def schedule_survey_timeout(
+    *,
+    user_id: int,
+    chat_id: int,
+    bot: Bot,
+    state: FSMContext,
+    question_index: int,
+) -> None:
+    question = SURVEY_QUESTIONS[question_index]
+
+    async def on_timeout() -> None:
+        current_state = await state.get_state()
+        current_data = await state.get_data()
+
+        if (
+            current_state == SurveyState.answering.state
+            and current_data.get("current_question_index") == question_index
+        ):
+            await state.clear()
+
+            keyboard = InlineKeyboardBuilder()
+            keyboard.button(text="🔄️ Начать снова", callback_data="survey")
+            keyboard.button(text="🏠 Главное меню", callback_data="main_menu")
+            keyboard.adjust(1)
+
+            await bot.send_message(
+                chat_id=chat_id,
+                text=(
+                    "⏳ Время ожидания ответа вышло.\n\n"
+                    "Анкета отменена. Вы можете начать заново через главное меню."
+                ),
+                reply_markup=keyboard.as_markup(),
+            )
+
+    timeout_manager.start(
+        user_id=user_id,
+        timeout_seconds=question.timeout_seconds,
+        callback=on_timeout,
+    )
 
 @survey_router.callback_query(F.data == "survey")
 async def survey(callback: CallbackQuery, db_session: AsyncSession) -> None:
@@ -42,6 +83,7 @@ async def survey(callback: CallbackQuery, db_session: AsyncSession) -> None:
 
 @survey_router.callback_query(F.data == "survey:continue")
 async def survey_start(callback: CallbackQuery, state: FSMContext) -> None:
+    timeout_manager.cancel(callback.from_user.id)
     await state.clear()
 
     await callback.answer()
@@ -54,6 +96,13 @@ async def survey_start(callback: CallbackQuery, state: FSMContext) -> None:
         )
     )
     await send_question(old_message, state, index=0)
+    schedule_survey_timeout(
+        user_id=callback.from_user.id,
+        chat_id=callback.message.chat.id,
+        bot=callback.bot,
+        state=state,
+        question_index=0,
+    )
 
 @survey_router.message(SurveyState.answering)
 async def process_survey_answer(message: Message, state: FSMContext, db_session: AsyncSession) -> None:
@@ -74,36 +123,14 @@ async def process_survey_answer(message: Message, state: FSMContext, db_session:
     chat_id = message.chat.id
     bot = message.bot
 
-    async def on_timeout() -> None:
-        current_state = await state.get_state()
-        current_data = await state.get_data()
-
-        if (
-                current_state == SurveyState.answering.state
-                and current_data.get("current_question_index") == index
-        ):
-            await state.clear()
-
-            keyboard = InlineKeyboardBuilder()
-            keyboard.button(text="🔄️ Начать снова", callback_data="survey")
-            keyboard.button(text="🏠 Главное меню", callback_data="main_menu")
-            keyboard.adjust(1)
-
-            await bot.send_message(
-                chat_id=chat_id,
-                text=(
-                    "⏳ Время ожидания ответа вышло.\n\n"
-                    "Анкета отменена. Вы можете начать заново через главное меню."
-                ),
-                reply_markup=keyboard.as_markup()
-            )
-
     if error:
         await message.answer(error)
-        timeout_manager.start(
+        schedule_survey_timeout(
             user_id=user_id,
-            timeout_seconds=question.timeout_seconds,
-            callback=on_timeout,
+            chat_id=chat_id,
+            bot=bot,
+            state=state,
+            question_index=index,
         )
         return
 
@@ -118,8 +145,10 @@ async def process_survey_answer(message: Message, state: FSMContext, db_session:
 
     await send_question(message, state, next_index)
 
-    timeout_manager.start(
+    schedule_survey_timeout(
         user_id=user_id,
-        timeout_seconds=question.timeout_seconds,
-        callback=on_timeout,
+        chat_id=chat_id,
+        bot=bot,
+        state=state,
+        question_index=next_index,
     )
