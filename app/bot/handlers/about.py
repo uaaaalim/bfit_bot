@@ -13,20 +13,18 @@ async def about_button(callback: CallbackQuery) -> None:
     keyboard.button(text="🎓 Образование и квалификация", callback_data="qualifications")
     keyboard.button(text="📘 Подход к тренировкам", callback_data="about:approach")
     keyboard.button(text="📸 Примеры работы", callback_data="about:results:1")
+    keyboard.button(text="📕 Контакты", callback_data="contacts")
     keyboard.button(text="🎯 Подобрать формат занятий", callback_data="survey")
-    keyboard.adjust(2, 1)
+    keyboard.adjust(2, 2, 1)
 
     await callback.answer()
     old_message = await remove_old_message(callback)
     await old_message.answer_photo(
         photo=attachments_cache.get("app/attachments/about.jpg"),
         caption=(
-            "Илья Мун — персональный тренер, КМС по бодибилдингу, "
-            "автор книг о фитнесе и создатель тренировочной системы MTR 10.\n\n"
-            "В фитнесе с 2011 года. Илья работает с мужчинами и женщинами разного уровня подготовки: "
-            "от новичков до тех, кто уже тренируется, но хочет более понятную систему и стабильный результат.\n\n"
-            "Главный принцип работы — не давать всем одну и ту же программу, а подбирать тренировки под цель, "
-            "опыт, ограничения и реальный образ жизни человека."
+            "Контакты.\n\n"
+            "Здесь сборник социальных сетей Ильи, подписывайтесь, делитесь мнением, задавайте вопросы!\n"
+            "Также, вы можете обратиться к нему лично, написав в личные сообщения."
         ),
         reply_markup=keyboard.as_markup(),
     )
