@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from sqlalchemy import Enum, String, Integer, BigInteger
+from sqlalchemy import Enum, String, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin
@@ -11,7 +11,7 @@ class FileType(StrEnum):
     VIDEO = "video"
 
 
-class Attachments(Base, TimestampMixin):
+class Attachment(Base, TimestampMixin):
     __tablename__ = "attachments"
 
     id: Mapped[int] = mapped_column(primary_key=True)

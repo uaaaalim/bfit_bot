@@ -1,6 +1,8 @@
-from .attachments import FileType, Attachments
+from .attachment import FileType, Attachment
+from .user import User
 
 __all__ = [
     'FileType',
-    'Attachments',
+    'Attachment',
+    'User',
 ]

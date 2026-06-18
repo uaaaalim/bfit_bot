@@ -1,17 +1,17 @@
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Attachments, FileType
+from app.db.models import Attachment, FileType
 
 
 async def get_all_by_bot_id(
     session: AsyncSession,
     bot_id: int,
-) -> list[Attachments]:
+) -> list[Attachment]:
     stmt = (
-        select(Attachments)
-        .where(Attachments.bot_id == bot_id)
-        .order_by(Attachments.id)
+        select(Attachment)
+        .where(Attachment.bot_id == bot_id)
+        .order_by(Attachment.id)
     )
 
     result = await session.execute(stmt)
@@ -23,10 +23,10 @@ async def get_by_path(
     *,
     bot_id: int,
     path: str,
-) -> Attachments | None:
-    stmt = select(Attachments).where(
-        Attachments.bot_id == bot_id,
-        Attachments.path == path,
+) -> Attachment | None:
+    stmt = select(Attachment).where(
+        Attachment.bot_id == bot_id,
+        Attachment.path == path,
     )
 
     result = await session.execute(stmt)
@@ -40,8 +40,8 @@ async def create(
     path: str,
     type_: FileType,
     file_id: str,
-) -> Attachments:
-    item = Attachments(
+) -> Attachment:
+    item = Attachment(
         bot_id=bot_id,
         path=path,
         file_type=type_,
@@ -61,7 +61,7 @@ async def create_or_update(
     path: str,
     type_: FileType,
     file_id: str,
-) -> Attachments:
+) -> Attachment:
     item = await get_by_path(
         session=session,
         bot_id=bot_id,
@@ -94,9 +94,9 @@ async def delete_by_paths(
     if not paths:
         return 0
 
-    stmt = delete(Attachments).where(
-        Attachments.bot_id == bot_id,
-        Attachments.path.in_(paths),
+    stmt = delete(Attachment).where(
+        Attachment.bot_id == bot_id,
+        Attachment.path.in_(paths),
     )
 
     result = await session.execute(stmt)

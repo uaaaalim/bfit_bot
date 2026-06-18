@@ -6,6 +6,7 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from app.bot.middlewares.db import DbSessionMiddleware
+from app.bot.middlewares.user import UserCheckMiddleware
 from app.bot.routers import ROUTERS
 from app.config import get_settings
 from app.db import session_factory
@@ -34,6 +35,7 @@ def setup_dispatcher() -> Dispatcher:
 
     # middlewares
     dp.update.middleware(DbSessionMiddleware(session_factory=session_factory))
+    dp.update.middleware(UserCheckMiddleware())
 
     # routers
     _setup_routers(dp)
