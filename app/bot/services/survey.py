@@ -1,12 +1,16 @@
+import asyncio
+import logging
 from dataclasses import dataclass
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from groq import AsyncGroq
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.states.survey import SurveyState
 from app.config import get_settings
+from app.db.repositories import users_repo
 
 
 @dataclass(frozen=True)
@@ -18,6 +22,7 @@ class SurveyQuestion:
     min_length: int = 5
     max_length: int = 500
 
+logger = logging.getLogger(__name__)
 
 GROQ_CLIENT = AsyncGroq(api_key=get_settings().groq_api_key)
 
@@ -104,7 +109,6 @@ Return EXACTLY in this format:
 Блок 1: О вас
 ФИО: ...
 Дата рождения: ...
-Способ связи: ...
 Рост: ...
 Вес: ...
 Чем занимаетесь: ...
@@ -275,7 +279,71 @@ def validate_answer(
 
     return None
 
-async def finish_survey(message: Message, state: FSMContext) -> None:
+async def analyze_survey(data: dict) -> str | None:
+    max_attempts = 3
+
+    for attempt in range(max_attempts):
+        try:
+            completion = await GROQ_CLIENT.chat.completions.create( # type: ignore
+                model="openai/gpt-oss-20b",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": AI_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": str(data)
+                    }
+                ],
+                temperature=0.1,
+                max_completion_tokens=1000,
+                top_p=1,
+                reasoning_effort="low",
+                stream=False
+            )
+
+            content = completion.choices[0].message.content
+
+            if not content:
+                raise ValueError("Empty AI response")
+
+            required_blocks = [
+                "Блок 1",
+                "Блок 2",
+                "Блок 3"
+            ]
+
+            if not all(block in content for block in required_blocks):
+                raise ValueError("Malformed AI response")
+
+            return content
+
+        except Exception as e:
+            logger.warning(
+                "AI analyze failed attempt %s: %s",
+                attempt + 1,
+                e
+            )
+
+            if attempt < max_attempts - 1:
+                await asyncio.sleep(2)
+
+    return None
+
+def format_raw_survey(data: dict) -> str:
+    return (
+        "⚠️ ИИ-анализ недоступен. Отправлены исходные ответы.\n\n"
+        f"Знакомство:\n{data.get('main_information', 'Нет ответа')}\n\n"
+        f"Здоровье:\n{data.get('health', 'Нет ответа')}\n\n"
+        f"Цели:\n{data.get('goals', 'Нет ответа')}\n\n"
+        f"Текущая активность:\n{data.get('current_activity', 'Нет ответа')}\n\n"
+        f"Образ жизни:\n{data.get('lifestyle', 'Нет ответа')}\n\n"
+        f"Привычки:\n{data.get('habits', 'Нет ответа')}\n\n"
+        f"Мотивация:\n{data.get('motivation', 'Нет ответа')}"
+    )
+
+async def finish_survey(message: Message, state: FSMContext, db_session: AsyncSession) -> None:
     data = await state.get_data()
     await state.clear()
 
@@ -294,25 +362,10 @@ async def finish_survey(message: Message, state: FSMContext) -> None:
         reply_markup=keyboard.as_markup()
     )
 
-    completion = await GROQ_CLIENT.chat.completions.create( # type: ignore
-        model="openai/gpt-oss-20b",
-        messages=[
-            {
-                "role": "system",
-                "content": AI_PROMPT
-            },
-            {
-                "role": "user",
-                "content": str(data)
-            }
-        ],
-        temperature=0.1,
-        max_completion_tokens=1000,
-        top_p=1,
-        reasoning_effort="low",
-        stream=False,
-        stop=None
-    )
+    analysis = await analyze_survey(data)
+
+    if analysis is None:
+        analysis = format_raw_survey(data)
 
     author_id = get_settings().survey_receiver_id
 
@@ -325,7 +378,8 @@ async def finish_survey(message: Message, state: FSMContext) -> None:
         chat_id=author_id,
         text=(
             "🔥 Новый ответ на анкету в боте!\n\n"
-            f"{completion.choices[0].message.content}\n\n"
+            f"{analysis}\n\n"
             f"➡️ Перейти к контакту: {user}"
         )
     )
+    await users_repo.set_passed_survey(db_session, telegram_id=message.from_user.id, value=True)

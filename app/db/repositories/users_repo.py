@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import User
@@ -47,3 +47,18 @@ async def get_or_create(
         session=session,
         telegram_id=telegram_id,
     )
+
+
+async def set_passed_survey(
+        session: AsyncSession,
+        *,
+        telegram_id: int,
+        value: bool = True
+) -> None:
+    stmt = (
+        update(User)
+        .where(User.telegram_id == telegram_id)
+        .values(passed_survey=value)
+    )
+
+    await session.execute(stmt)

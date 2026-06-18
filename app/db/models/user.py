@@ -29,3 +29,7 @@ class User(Base, TimestampMixin):
     block_reason: Mapped[str] = mapped_column(
         String, nullable=True
     )
+
+    passed_survey: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )

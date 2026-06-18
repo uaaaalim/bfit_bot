@@ -2,16 +2,25 @@ from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.cache import attachments_cache, timeout_manager
 from app.bot.services.survey import SURVEY_QUESTIONS, validate_answer, send_question, finish_survey
 from app.bot.states.survey import SurveyState
+from app.db.repositories import users_repo
 from app.utils.message_resolver import remove_old_message
 
 survey_router = Router(name="survey")
 
 @survey_router.callback_query(F.data == "survey")
-async def survey(callback: CallbackQuery) -> None:
+async def survey(callback: CallbackQuery, db_session: AsyncSession) -> None:
+    user = await users_repo.get_by_telegram_id(db_session, telegram_id=callback.from_user.id)
+
+    if user.passed_survey:
+        await callback.answer()
+        await callback.message.answer(text="🏋️ Вы уже заполнили анкету, во второй раз не получится :(")
+        return
+
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text="✅ Продолжить", callback_data="survey:continue")
     keyboard.button(text="🏠 На главный экран", callback_data="main_menu")
@@ -47,7 +56,7 @@ async def survey_start(callback: CallbackQuery, state: FSMContext) -> None:
     await send_question(old_message, state, index=0)
 
 @survey_router.message(SurveyState.answering)
-async def process_survey_answer(message: Message, state: FSMContext) -> None:
+async def process_survey_answer(message: Message, state: FSMContext, db_session: AsyncSession) -> None:
     timeout_manager.cancel(message.from_user.id)
 
     data = await state.get_data()
@@ -104,7 +113,7 @@ async def process_survey_answer(message: Message, state: FSMContext) -> None:
     next_index = index + 1
 
     if next_index >= len(SURVEY_QUESTIONS):
-        await finish_survey(message, state)
+        await finish_survey(message, state, db_session)
         return
 
     await send_question(message, state, next_index)
