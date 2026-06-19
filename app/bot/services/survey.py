@@ -349,6 +349,7 @@ async def finish_survey(message: Message, state: FSMContext, db_session: AsyncSe
 
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text="🏠 Главное меню", callback_data="main_menu")
+    keyboard.button(url="https://t.me/bfit360", text="🏋️ Fitness 360 - Телеграм Канал Ильи")
     keyboard.button(url="https://t.me/ilyamunfit", text="Связаться в Telegram")
     keyboard.button(url="https://instagram.com/ilyamun.fit", text="Страничка в Instagram")
     keyboard.button(url="https://tiktok.com/@ilyamunfit2", text="Я в TikTok")
