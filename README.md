@@ -1,32 +1,186 @@
-# bfit_bot
+# BFIT Bot 🏋️‍♂️
 
-`bfit_bot` — шаблон Telegram-бота на **aiogram 3** с:
-- автозагрузкой хендлеров из директорий,
-- ожиданием действий пользователя (сообщение/кнопка) с таймером,
-- асинхронной работой с PostgreSQL через SQLAlchemy,
-- миграциями через Alembic,
-- управлением зависимостями через Poetry.
+**BFIT Bot** — Telegram-бот для персонального тренера Ильи: показывает информацию о тренере, результаты учеников, контакты и собирает анкету для подбора формата занятий. После прохождения анкеты бот анализирует ответы через Groq API, отправляет структурированный результат тренеру и отмечает пользователя в базе, чтобы анкету нельзя было заполнить повторно.
 
-## Стек
+## Что умеет проект
 
-- Python `>=3.13,<3.15`
-- aiogram `>=3.26.0,<4.0.0`
-- sqlalchemy `>=2.0.48,<3.0.0`
-- asyncpg `>=0.31.0,<0.32.0`
-- alembic `>=1.18.4,<2.0.0`
-- python-dotenv `>=1.2.2,<2.0.0`
-- colorlog `>=6.10.1,<7.0.0`
+- 🚀 Работает на **aiogram 3** и асинхронном polling.
+- 🧠 Использует **FSM** для пошаговой анкеты пользователя.
+- ⏳ Поддерживает таймеры ожидания ответа: если пользователь не ответил вовремя, анкета отменяется.
+- 🗄️ Хранит пользователей и кэш Telegram `file_id` вложений в **PostgreSQL**.
+- 🔁 Управляет схемой БД через **Alembic**.
+- 🤖 Анализирует свободные ответы анкеты через **Groq API**.
+- 🧩 Разделён на роутеры, хендлеры, middleware, сервисы, модели и репозитории.
+- 📝 Имеет настраиваемое логирование в консоль и файл.
 
 ---
 
-## Установка зависимостей (Poetry)
+## Стек
+
+- **Python** `>=3.14,<3.15`
+- **aiogram** `>=3.29.0,<4.0.0`
+- **SQLAlchemy asyncio** `>=2.0.51,<3.0.0`
+- **asyncpg** `>=0.31.0,<0.32.0`
+- **Alembic** `>=1.18.4,<2.0.0`
+- **Pydantic / pydantic-settings**
+- **python-dotenv**
+- **Groq SDK**
+- **Poetry** для зависимостей и виртуального окружения
+
+---
+
+## Структура проекта
+
+```text
+app/
+├── bot/
+│   ├── cache/          # кэш вложений и менеджер таймеров
+│   ├── filters/        # кастомные фильтры
+│   ├── handlers/       # обработчики команд, callback и сообщений
+│   ├── middlewares/    # middleware БД и пользователей
+│   ├── services/       # бизнес-логика, например анкета
+│   ├── states/         # FSM-состояния
+│   ├── routers.py      # список подключаемых роутеров
+│   └── setup.py        # создание Bot и Dispatcher
+├── db/
+│   ├── models/         # SQLAlchemy-модели
+│   ├── repositories/   # функции доступа к БД
+│   ├── base.py         # Base и TimestampMixin
+│   └── session.py      # engine/session_factory/get_session
+├── config.py           # настройки из .env
+├── logger.py           # настройка логирования
+└── main.py             # точка запуска приложения
+
+alembic/                # миграции
+run.py                  # запуск бота
+.env.example            # пример переменных окружения
+pyproject.toml          # зависимости Poetry
+```
+
+---
+
+## Настройка `.env`
+
+Скопируйте пример окружения:
 
 ```bash
-poetry env use 3.13
+cp .env.example .env
+```
+
+Для Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Заполните `.env` по примеру:
+
+```env
+BOT_TOKEN=1234567890:telegram_bot_token
+
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=bfit_bot
+
+ADMIN_IDS=111111111,222222222
+MEDIA_CHECK_VICTIM_ID=111111111
+SURVEY_RECEIVER_ID=111111111
+
+GROQ_API_KEY=gsk_your_groq_key
+```
+
+### Что означают переменные
+
+| Переменная | Описание |
+| --- | --- |
+| `BOT_TOKEN` | Токен Telegram-бота из [@BotFather](https://t.me/BotFather). |
+| `POSTGRES_HOST` | Хост PostgreSQL. Для локального запуска обычно `localhost`. |
+| `POSTGRES_PORT` | Порт PostgreSQL, обычно `5432`. |
+| `POSTGRES_USER` | Пользователь PostgreSQL. |
+| `POSTGRES_PASSWORD` | Пароль пользователя PostgreSQL. |
+| `POSTGRES_DB` | Название базы данных. |
+| `ADMIN_IDS` | Telegram ID администраторов через запятую. Используется фильтром администратора. |
+| `MEDIA_CHECK_VICTIM_ID` | Telegram ID чата/пользователя для проверки и кэширования медиафайлов. |
+| `SURVEY_RECEIVER_ID` | Telegram ID получателя готовых анкет. |
+| `GROQ_API_KEY` | API-ключ Groq для анализа ответов анкеты. |
+
+Дополнительно в `app/config.py` есть настройки логирования с дефолтными значениями: `LOG_DIR`, `LOG_LEVEL`, `LOG_FILE_MAX_MB`, `LOG_FOLDER_MAX_MB`, `LOG_TO_CONSOLE`, `LOG_TO_FILE`.
+
+---
+
+## Установка Poetry
+
+### Ubuntu / Debian
+
+Рекомендуемый способ установки Poetry:
+
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+Добавьте Poetry в `PATH`, если установщик попросил это сделать:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Проверьте установку:
+
+```bash
+poetry --version
+```
+
+### Windows PowerShell
+
+```powershell
+(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
+```
+
+Если команда `poetry` не находится, добавьте в `Path` папку:
+
+```text
+%APPDATA%\Python\Scripts
+```
+
+Проверка:
+
+```powershell
+poetry --version
+```
+
+---
+
+## Установка зависимостей
+
+Проект рассчитан на Python `>=3.14,<3.15`, поэтому сначала убедитесь, что нужная версия Python установлена:
+
+```bash
+python --version
+```
+
+Чтобы виртуальное окружение создавалось прямо внутри проекта в папке `.venv`, выполните:
+
+```bash
+poetry config virtualenvs.in-project true
+```
+
+Выберите интерпретатор и установите зависимости:
+
+```bash
+poetry env use python3.14
 poetry install
 ```
 
-Проверить, что окружение поднято:
+На Windows команда может выглядеть так:
+
+```powershell
+poetry env use 3.14
+poetry install
+```
+
+Проверка окружения:
 
 ```bash
 poetry run python --version
@@ -34,342 +188,260 @@ poetry run python --version
 
 ---
 
-## Настройка
+## Как устроены хендлеры
 
-Создайте `.env` в корне проекта:
+Хендлеры лежат в `app/bot/handlers/`. Каждый файл создаёт свой `Router`, регистрирует обработчики и экспортирует роутер. Затем роутер нужно добавить в список `ROUTERS` в `app/bot/routers.py`.
 
-```env
-BOT_TOKEN=ваш_токен_бота
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/bfit_bot
-LOG_LEVEL=INFO
-```
-
-> `BOT_TOKEN` обязателен. Если `DATABASE_URL` не указан, используется значение по умолчанию из `core/config.py`.
-
----
-
-## Запуск бота
-
-### Вариант 1 (рекомендуется)
-```bash
-poetry run python app.py
-```
-
-### Вариант 2
-```bash
-poetry run python run.py
-```
-
-При старте выводятся данные о проекте, версиях библиотек и подключенных хендлерах.
-
----
-
-## Как устроена автозагрузка
-
-Бот автоматически сканирует директории:
-- `commands/`
-- `buttons/`
-- `messages/`
-- `schedules/`
-
-и поднимает все классы-наследники базовых реализаций.
-
-Чтобы добавить новый хендлер, достаточно создать `.py` файл с классом нужного типа в соответствующей директории.
-
----
-
-## Примеры из проекта
-
-## 1) Команда (`/start`)
-
-Файл: `commands/start.py`
+### Пример команды `/start`
 
 ```python
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram import Router, types
+from aiogram.filters import CommandStart
 
-from core.implementations.command import BaseCommand
+main_router = Router(name="start")
 
-
-class StartCommand(BaseCommand):
-    name = "start"
-    description = "Запуск бота"
-
-    async def execute(self, message: Message) -> None:
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text="Ping", callback_data="ping")],
-                [InlineKeyboardButton(text="Ждать кнопку 10 сек", callback_data="demo_wait_button")],
-            ]
-        )
-        await message.answer(
-            "Привет! Доступно:\n"
-            "/wait_message - ждать сообщение 10 сек\n"
-            "/db_demo - создать/получить пользователя\n"
-            "Или нажми кнопку ниже.",
-            reply_markup=keyboard,
-        )
+@main_router.message(CommandStart())
+async def start_command(message: types.Message) -> None:
+    await message.answer("Привет! Это главное меню.")
 ```
 
-Минимальный шаблон своей команды:
+### Пример callback-хендлера кнопки
 
 ```python
-from aiogram.types import Message
-from core.implementations.command import BaseCommand
-
-
-class MyCommand(BaseCommand):
-    name = "my_command"
-    description = "Моя команда"
-
-    async def execute(self, message: Message) -> None:
-        await message.answer("Команда сработала")
-```
-
----
-
-## 2) Листенер кнопки (callback)
-
-Файл: `buttons/ping.py`
-
-```python
+from aiogram import F, Router
 from aiogram.types import CallbackQuery
-from core.implementations.button import BaseButton
 
+example_router = Router(name="example")
 
-class PingButton(BaseButton):
-    callback_data = "ping"
-
-    async def execute(self, callback: CallbackQuery) -> None:
-        await callback.answer("pong")
-        await callback.message.answer("Кнопка Ping обработана ✅")
+@example_router.callback_query(F.data == "example:open")
+async def open_example(callback: CallbackQuery) -> None:
+    await callback.answer()
+    await callback.message.answer("Кнопка нажата ✅")
 ```
 
-Минимальный шаблон своей кнопки:
+### Подключение нового роутера
 
 ```python
-from aiogram.types import CallbackQuery
-from core.implementations.button import BaseButton
+from app.bot.handlers.example import example_router
 
-
-class MyButton(BaseButton):
-    callback_data = "my_button"
-
-    async def execute(self, callback: CallbackQuery) -> None:
-        await callback.answer("Нажато")
+ROUTERS = [
+    main_router,
+    example_router,
+]
 ```
 
 ---
 
-## 3) Листенер сообщений
+## Кнопки и сообщения
 
-Файл: `messages/echo.py`
+В проекте используются `InlineKeyboardBuilder` и callback data.
 
-```python
-from aiogram.types import Message
-from core.implementations.message import BaseMessage
-
-
-class EchoMessage(BaseMessage):
-    trigger = "*"
-
-    async def execute(self, message: Message) -> None:
-        if message.text and not message.text.startswith("/"):
-            await message.answer(f"Эхо: {message.text}")
-```
-
-Минимальный шаблон своего листенера:
+### Создать inline-кнопки
 
 ```python
-from aiogram.types import Message
-from core.implementations.message import BaseMessage
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+keyboard = InlineKeyboardBuilder()
+keyboard.button(text="🏠 Главное меню", callback_data="main_menu")
+keyboard.button(text="📸 Примеры работы", callback_data="main_menu:results:1")
+keyboard.adjust(1)
 
-class MyMessageListener(BaseMessage):
-    trigger = "*"
-
-    async def execute(self, message: Message) -> None:
-        await message.answer("Сообщение получено")
+await message.answer("Выберите действие:", reply_markup=keyboard.as_markup())
 ```
+
+### Отправить сообщение с картинкой
+
+```python
+await message.answer_photo(
+    photo=attachments_cache.get("app/attachments/main_menu.jpg"),
+    caption="Текст под фото",
+    reply_markup=keyboard.as_markup(),
+)
+```
+
+`attachments_cache` нужен, чтобы брать уже сохранённый Telegram `file_id` и не загружать один и тот же файл каждый раз заново.
 
 ---
 
-## 4) Кнопка + таймер ожидания
+## FSM и таймеры
 
-Файл: `buttons/demo_wait_button.py`
+FSM используется для анкеты в `app/bot/handlers/survey.py`, а состояния описаны в `app/bot/states/survey.py`.
+
+### Минимальный пример состояния
 
 ```python
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.fsm.state import State, StatesGroup
 
-from core.implementations.button import BaseButton
-
-
-class DemoWaitButton(BaseButton):
-    callback_data = "demo_wait_button"
-
-    async def execute(self, callback: CallbackQuery) -> None:
-        if not callback.message:
-            await callback.answer("Нет исходного сообщения", show_alert=True)
-            return
-
-        await callback.answer()
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[[InlineKeyboardButton(text="Подтвердить", callback_data="confirm_action")]]
-        )
-        prompt = await callback.message.answer("Нажми 'Подтвердить' за 10 секунд", reply_markup=keyboard)
-
-        async def on_timeout() -> None:
-            await prompt.edit_text("⏰ Таймер истек. Кнопка не нажата")
-
-        waited = await self.client.wait_for_button(
-            chat_id=callback.message.chat.id,
-            user_id=callback.from_user.id,
-            timeout=10,
-            on_timeout=on_timeout,
-        )
-        if waited and waited.data == "confirm_action":
-            await waited.answer("Подтверждено")
-            await prompt.edit_text("✅ Действие подтверждено")
+class MyState(StatesGroup):
+    waiting_text = State()
 ```
 
-Пример с таймером для ожидания **сообщения**: `commands/wait_message.py`.
+### Записать данные и перевести пользователя в состояние
+
+```python
+await state.update_data(current_question_index=0)
+await state.set_state(MyState.waiting_text)
+await message.answer("Напишите ответ текстом")
+```
+
+### Обработать сообщение в состоянии
+
+```python
+@router.message(MyState.waiting_text)
+async def process_text(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    await state.clear()
+    await message.answer(f"Готово, данные: {data}")
+```
+
+### Таймер ожидания
+
+Для таймеров используется `TimeoutManager` из `app/bot/cache/timeouts.py`. Он создаёт `asyncio.Task`, ждёт нужное количество секунд и вызывает callback, если таймер не отменили.
+
+Упрощённый пример:
+
+```python
+from app.bot.cache import timeout_manager
+
+timeout_manager.start(
+    user_id=message.from_user.id,
+    timeout_seconds=180,
+    callback=on_timeout,
+)
+
+# Когда пользователь ответил — отменяем старый таймер:
+timeout_manager.cancel(message.from_user.id)
+```
+
+В анкете таймер запускается после каждого вопроса. Если пользователь отвечает корректно, старый таймер отменяется и создаётся новый для следующего вопроса.
 
 ---
 
-## Работа с БД: entity + repository + использование
+## Работа с базой данных
 
-## 1) Создать entity
+Подключение к БД собирается из переменных `POSTGRES_*` в `app/config.py` и используется в `app/db/session.py`.
 
-Пример существующей entity: `database/entities/user.py`
+### Получить `AsyncSession` в хендлере
+
+`DbSessionMiddleware` автоматически добавляет `db_session` в аргументы хендлера:
+
+```python
+from sqlalchemy.ext.asyncio import AsyncSession
+
+@router.callback_query(F.data == "profile")
+async def profile(callback: CallbackQuery, db_session: AsyncSession) -> None:
+    ...
+```
+
+Middleware сам делает `commit()` после успешного хендлера и `rollback()` при ошибке.
+
+### Создать модель
+
+Модели лежат в `app/db/models/` и наследуются от `Base`. Если нужны `created_at` и `updated_at`, добавьте `TimestampMixin`.
 
 ```python
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.database.base import BaseEntity
+from app.db.base import Base, TimestampMixin
 
-
-class User(BaseEntity):
-    __tablename__ = "users"
-
-    tg_id: Mapped[int] = mapped_column(unique=True, index=True)
-    username: Mapped[str | None] = mapped_column(String(255), nullable=True)
-```
-
-Шаблон новой entity:
-
-```python
-from sqlalchemy.orm import Mapped, mapped_column
-
-from core.database.base import BaseEntity
-
-
-class Workout(BaseEntity):
+class Workout(Base, TimestampMixin):
     __tablename__ = "workouts"
 
-    title: Mapped[str] = mapped_column(nullable=False)
-    user_tg_id: Mapped[int] = mapped_column(index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
 ```
 
-## 2) Создать repository
+После создания модели добавьте её импорт в `app/db/models/__init__.py`, чтобы Alembic видел таблицу при автогенерации.
 
-Пример существующего репозитория: `database/repos/user_repo.py`
+### Создать репозиторий
+
+Репозитории в проекте — это обычные async-функции, которые принимают `AsyncSession` первым аргументом.
 
 ```python
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database.crud import CRUDRepository
-from database.entities.user import User
+from app.db.models import Workout
 
-
-class UserRepository(CRUDRepository[User]):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(User, session)
+async def get_by_id(session: AsyncSession, workout_id: int) -> Workout | None:
+    result = await session.execute(
+        select(Workout).where(Workout.id == workout_id)
+    )
+    return result.scalar_one_or_none()
 ```
 
-Шаблон для новой entity:
+### Использовать репозиторий в хендлере
 
 ```python
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.repositories import users_repo
 
-from core.database.crud import CRUDRepository
-from database.entities.workout import Workout
-
-
-class WorkoutRepository(CRUDRepository[Workout]):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(Workout, session)
-```
-
-Не забудьте добавить репозиторий в агрегатор `database/__init__.py`, как это сделано для `users`.
-
-## 3) Пример использования в команде
-
-Файл: `commands/db_demo.py`
-
-```python
-from aiogram.types import Message
-
-from core.implementations.command import BaseCommand
-from database import Repositories
-from database.entities.user import User
-
-
-class DbDemoCommand(BaseCommand):
-    name = "db_demo"
-    description = "Пример работы с БД"
-
-    async def execute(self, message: Message) -> None:
-        async with self.client.db.session() as session:
-            repos = Repositories(session)
-            user = await repos.users.get_where(User.tg_id == message.from_user.id)
-            if not user:
-                user = User(tg_id=message.from_user.id, username=message.from_user.username)
-                user = await repos.users.create(user)
-                await message.answer(f"Создан пользователь с id={user.id}")
-                return
-
-            await message.answer(f"Пользователь найден: id={user.id}, username={user.username}")
+@router.message(Command("me"))
+async def me(message: Message, db_session: AsyncSession) -> None:
+    user = await users_repo.get_by_telegram_id(
+        db_session,
+        telegram_id=message.from_user.id,
+    )
+    await message.answer(f"Ваш ID в Telegram: {user.telegram_id}")
 ```
 
 ---
 
-## Alembic: миграции БД
+## Миграции Alembic
 
-## Применить миграции
+Перед миграциями убедитесь, что PostgreSQL запущен, база создана, а `.env` заполнен.
+
+### Применить миграции
 
 ```bash
 poetry run alembic upgrade head
 ```
 
-## Откатить последнюю миграцию
-
-```bash
-poetry run alembic downgrade -1
-```
-
-## Создать новую миграцию
-
-```bash
-poetry run alembic revision -m "create workouts"
-```
-
-или автогенерацией:
+### Создать новую миграцию автоматически
 
 ```bash
 poetry run alembic revision --autogenerate -m "add workouts table"
 ```
 
-## Важно для autogenerate
+### Создать пустую миграцию вручную
 
-В проекте настроен авто-импорт всех модулей из `database/entities/` внутри `alembic/env.py`, поэтому вручную добавлять импорт каждой новой модели не нужно.
+```bash
+poetry run alembic revision -m "custom migration"
+```
 
-Также `alembic/env.py` читает `.env` через `python-dotenv` и, если задан `DATABASE_URL`, подставляет его в `sqlalchemy.url` (поверх значения из `alembic.ini`).
+### Откатить последнюю миграцию
 
-После генерации проверьте содержимое файла в `alembic/versions/` и примените:
+```bash
+poetry run alembic downgrade -1
+```
+
+После автогенерации обязательно откройте файл в `alembic/versions/` и проверьте, что Alembic создал именно те изменения, которые нужны.
+
+---
+
+## Запуск бота
+
+1. Заполните `.env`.
+2. Запустите PostgreSQL.
+3. Примените миграции:
 
 ```bash
 poetry run alembic upgrade head
 ```
+
+4. Запустите бота:
+
+```bash
+poetry run python run.py
+```
+
+При запуске бот:
+
+- настраивает логирование;
+- создаёт `Bot` и `Dispatcher`;
+- подключает middleware и роутеры;
+- проверяет/кэширует медиафайлы;
+- сбрасывает webhook и запускает polling.
 
 ---
 
@@ -380,8 +452,26 @@ poetry run alembic upgrade head
 poetry install
 
 # запустить бота
-poetry run python app.py
+poetry run python run.py
 
 # применить миграции
 poetry run alembic upgrade head
+
+# создать миграцию по моделям
+poetry run alembic revision --autogenerate -m "migration name"
+
+# посмотреть текущую ревизию БД
+poetry run alembic current
 ```
+
+---
+
+## Небольшие советы по разработке
+
+- Один экран/раздел бота — один файл в `app/bot/handlers/` и отдельный `Router`.
+- Callback data лучше делать предсказуемой: `section:action:id`, например `main_menu:results:1`.
+- Не забывайте вызывать `await callback.answer()`, чтобы Telegram не показывал вечную загрузку на кнопке.
+- Для долгих сценариев используйте FSM, а промежуточные данные храните в `FSMContext`.
+- Любую работу с БД делайте через `db_session`, который приходит из middleware.
+- После изменения моделей всегда создавайте и проверяйте миграцию.
+- Секреты не коммитьте: реальные значения должны быть только в локальном `.env`.
