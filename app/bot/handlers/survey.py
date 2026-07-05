@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.bot.cache import attachments_cache, timeout_manager
 from app.bot.services.survey import SURVEY_QUESTIONS, validate_answer, send_question, finish_survey
 from app.bot.states.survey import SurveyState
-from app.db.repositories import users_repo
+from app.db.repositories import surveys_repo
 from app.utils.message_resolver import remove_old_message
 
 survey_router = Router(name="survey")
@@ -55,9 +55,9 @@ def schedule_survey_timeout(
 
 @survey_router.callback_query(F.data == "survey")
 async def survey(callback: CallbackQuery, db_session: AsyncSession) -> None:
-    user = await users_repo.get_by_telegram_id(db_session, telegram_id=callback.from_user.id)
+    survey_data = await surveys_repo.get_by_telegram_id(db_session, telegram_id=callback.from_user.id)
 
-    if user.passed_survey:
+    if survey_data:
         await callback.answer()
         await callback.message.answer(text="🏋️ Вы уже заполнили анкету, во второй раз не получится :(")
         return

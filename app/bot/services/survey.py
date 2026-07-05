@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.states.survey import SurveyState
 from app.config import get_settings
-from app.db.repositories import users_repo
+from app.db.repositories import surveys_repo
 
 
 @dataclass(frozen=True)
@@ -375,6 +375,12 @@ async def finish_survey(message: Message, state: FSMContext, db_session: AsyncSe
     else:
         user = f'@{message.from_user.username} ({message.from_user.full_name})'
 
+    await surveys_repo.set_data(
+        db_session,
+        telegram_id=message.from_user.id,
+        raw_data=str(data),
+        detailed_data=analysis,
+    )
     await message.bot.send_message(
         chat_id=author_id,
         text=(
@@ -383,4 +389,3 @@ async def finish_survey(message: Message, state: FSMContext, db_session: AsyncSe
             f"➡️ Перейти к контакту: {user}"
         )
     )
-    await users_repo.set_passed_survey(db_session, telegram_id=message.from_user.id, value=True)
