@@ -1,6 +1,6 @@
 [project]
 name = "bfit-bot"
-version = "2.1.1"
+version = "2.1.2"
 description = "A Iliya Mun's helper Telegram bot that collects surveys about trainins and show information about the coach"
 authors = [
     {name = "Alim Mun",email = "zhaba.v.kedah77@gmail.com"}
