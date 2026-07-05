@@ -1,17 +1,21 @@
 # BFIT Bot 🏋️‍♂️
 
-**BFIT Bot** — Telegram-бот для персонального тренера Ильи: показывает информацию о тренере, результаты учеников, контакты и собирает анкету для подбора формата занятий. После прохождения анкеты бот анализирует ответы через Groq API, отправляет структурированный результат тренеру и отмечает пользователя в базе, чтобы анкету нельзя было заполнить повторно.
+**BFIT Bot** — Telegram-бот персонального тренера Ильи Муна. Бот знакомит пользователя с тренером, показывает квалификацию, подход к тренировкам, примеры результатов, контакты и собирает анкету для подбора формата занятий. Перед началом работы бот проверяет подписку на Telegram-канал, сохраняет имя пользователя, проводит пошаговую анкету и отправляет Илье структурированный результат.
 
-## Что умеет проект
+## Возможности
 
-- 🚀 Работает на **aiogram 3** и асинхронном polling.
-- 🧠 Использует **FSM** для пошаговой анкеты пользователя.
-- ⏳ Поддерживает таймеры ожидания ответа: если пользователь не ответил вовремя, анкета отменяется.
-- 🗄️ Хранит пользователей и кэш Telegram `file_id` вложений в **PostgreSQL**.
-- 🔁 Управляет схемой БД через **Alembic**.
-- 🤖 Анализирует свободные ответы анкеты через **Groq API**.
-- 🧩 Разделён на роутеры, хендлеры, middleware, сервисы, модели и репозитории.
-- 📝 Имеет настраиваемое логирование в консоль и файл.
+- 🚀 Асинхронный Telegram-бот на **aiogram 3** в режиме polling.
+- 📢 Проверка подписки на обязательный Telegram-канал перед показом главного меню.
+- 👋 Первичное знакомство: бот запрашивает и сохраняет имя пользователя.
+- 🧠 Пошаговая анкета на **FSM** с текстовыми ответами и inline-вариантами выбора.
+- ⏳ Таймеры ожидания ответа для знакомства и каждого шага анкеты.
+- 🤖 Анализ свободных ответов через **Groq API** с fallback на отправку исходных данных.
+- 📬 Отправка готовой анкеты в отдельный Telegram-чат/пользователю из настроек.
+- 🗄️ Хранение пользователей, результатов анкет и Telegram `file_id` медиафайлов в **PostgreSQL**.
+- 🖼️ Автоматическая проверка, загрузка и кэширование изображений/видео при старте бота.
+- 🔁 Управление схемой БД через **Alembic**.
+- 🧩 Разделение кода на routers, handlers, middlewares, services, repositories и models.
+- 📝 Настраиваемое логирование в консоль и файл.
 
 ---
 
@@ -25,7 +29,7 @@
 - **Pydantic / pydantic-settings**
 - **python-dotenv**
 - **Groq SDK**
-- **Poetry** для зависимостей и виртуального окружения
+- **Poetry** для управления зависимостями
 
 ---
 
@@ -33,33 +37,36 @@
 
 ```text
 app/
+├── attachments/              # локальные изображения, документы и видео для бота
 ├── bot/
-│   ├── cache/          # кэш вложений и менеджер таймеров
-│   ├── filters/        # кастомные фильтры
-│   ├── handlers/       # обработчики команд, callback и сообщений
-│   ├── middlewares/    # middleware БД и пользователей
-│   ├── services/       # бизнес-логика, например анкета
-│   ├── states/         # FSM-состояния
-│   ├── routers.py      # список подключаемых роутеров
-│   └── setup.py        # создание Bot и Dispatcher
+│   ├── cache/                # in-memory cache file_id и менеджер timeout-задач
+│   ├── filters/              # кастомные фильтры
+│   ├── handlers/             # обработчики команд, callback и сообщений
+│   ├── middlewares/          # middleware БД и автоматического создания пользователя
+│   ├── services/             # бизнес-логика анкеты и AI-анализа
+│   ├── states/               # FSM-состояния знакомства и анкеты
+│   ├── attachments.py        # декларация и загрузка медиафайлов в Telegram
+│   ├── routers.py            # список подключаемых роутеров
+│   └── setup.py              # создание Bot и Dispatcher
 ├── db/
-│   ├── models/         # SQLAlchemy-модели
-│   ├── repositories/   # функции доступа к БД
-│   ├── base.py         # Base и TimestampMixin
-│   └── session.py      # engine/session_factory/get_session
-├── config.py           # настройки из .env
-├── logger.py           # настройка логирования
-└── main.py             # точка запуска приложения
+│   ├── models/               # SQLAlchemy-модели: users, attachments, surveys
+│   ├── repositories/         # async-функции доступа к БД
+│   ├── base.py               # Base и TimestampMixin
+│   └── session.py            # engine, session_factory, get_session
+├── utils/                    # вспомогательные функции
+├── config.py                 # настройки из .env
+├── logger.py                 # настройка логирования
+└── main.py                   # основной сценарий запуска
 
-alembic/                # миграции
-run.py                  # запуск бота
-.env.example            # пример переменных окружения
-pyproject.toml          # зависимости Poetry
+alembic/                      # миграции БД
+run.py                        # CLI-точка запуска бота
+.env.example                  # пример переменных окружения
+pyproject.toml                # зависимости Poetry
 ```
 
 ---
 
-## Настройка `.env`
+## Переменные окружения
 
 Скопируйте пример окружения:
 
@@ -73,7 +80,7 @@ cp .env.example .env
 Copy-Item .env.example .env
 ```
 
-Заполните `.env` по примеру:
+Заполните `.env`:
 
 ```env
 BOT_TOKEN=1234567890:telegram_bot_token
@@ -87,11 +94,10 @@ POSTGRES_DB=bfit_bot
 ADMIN_IDS=111111111,222222222
 MEDIA_CHECK_VICTIM_ID=111111111
 SURVEY_RECEIVER_ID=111111111
+TELEGRAM_CHANNEL_SUBSCRIBE=@bfit360
 
 GROQ_API_KEY=gsk_your_groq_key
 ```
-
-### Что означают переменные
 
 | Переменная | Описание |
 | --- | --- |
@@ -101,12 +107,42 @@ GROQ_API_KEY=gsk_your_groq_key
 | `POSTGRES_USER` | Пользователь PostgreSQL. |
 | `POSTGRES_PASSWORD` | Пароль пользователя PostgreSQL. |
 | `POSTGRES_DB` | Название базы данных. |
-| `ADMIN_IDS` | Telegram ID администраторов через запятую. Используется фильтром администратора. |
-| `MEDIA_CHECK_VICTIM_ID` | Telegram ID чата/пользователя для проверки и кэширования медиафайлов. |
-| `SURVEY_RECEIVER_ID` | Telegram ID получателя готовых анкет. |
+| `ADMIN_IDS` | Telegram ID администраторов через запятую. Сейчас используется как общая настройка для admin-фильтра. |
+| `MEDIA_CHECK_VICTIM_ID` | Telegram ID чата/пользователя, куда бот отправляет новые медиа для получения и кэширования `file_id`. |
+| `SURVEY_RECEIVER_ID` | Telegram ID получателя заполненных анкет. |
+| `TELEGRAM_CHANNEL_SUBSCRIBE` | Обязательный канал для подписки, например `@bfit360`. Бот проверяет подписку через `get_chat_member`. |
 | `GROQ_API_KEY` | API-ключ Groq для анализа ответов анкеты. |
 
-Дополнительно в `app/config.py` есть настройки логирования с дефолтными значениями: `LOG_DIR`, `LOG_LEVEL`, `LOG_FILE_MAX_MB`, `LOG_FOLDER_MAX_MB`, `LOG_TO_CONSOLE`, `LOG_TO_FILE`.
+Дополнительные настройки логирования имеют значения по умолчанию и при необходимости тоже могут быть заданы в `.env`: `LOG_DIR`, `LOG_LEVEL`, `LOG_FILE_MAX_MB`, `LOG_FOLDER_MAX_MB`, `LOG_TO_CONSOLE`, `LOG_TO_FILE`.
+
+---
+
+## Быстрый старт
+
+1. Установите Python `>=3.14,<3.15` и Poetry.
+2. Создайте `.env` и заполните переменные окружения.
+3. Убедитесь, что PostgreSQL запущен и база данных создана.
+4. Установите зависимости:
+
+```bash
+poetry config virtualenvs.in-project true
+poetry env use python3.14
+poetry install
+```
+
+5. Примените миграции:
+
+```bash
+poetry run alembic upgrade head
+```
+
+6. Запустите бота:
+
+```bash
+poetry run python run.py
+```
+
+При старте бот настраивает логирование, создаёт `Bot` и `Dispatcher`, подключает middleware и роутеры, проверяет/кэширует медиафайлы, удаляет webhook и запускает polling.
 
 ---
 
@@ -114,21 +150,9 @@ GROQ_API_KEY=gsk_your_groq_key
 
 ### Ubuntu / Debian
 
-Рекомендуемый способ установки Poetry:
-
 ```bash
 curl -sSL https://install.python-poetry.org | python3 -
-```
-
-Добавьте Poetry в `PATH`, если установщик попросил это сделать:
-
-```bash
 export PATH="$HOME/.local/bin:$PATH"
-```
-
-Проверьте установку:
-
-```bash
 poetry --version
 ```
 
@@ -136,6 +160,7 @@ poetry --version
 
 ```powershell
 (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
+poetry --version
 ```
 
 Если команда `poetry` не находится, добавьте в `Path` папку:
@@ -144,68 +169,61 @@ poetry --version
 %APPDATA%\Python\Scripts
 ```
 
-Проверка:
+---
 
-```powershell
-poetry --version
-```
+## Пользовательский сценарий
+
+1. Пользователь отправляет `/start`.
+2. Бот проверяет подписку на канал из `TELEGRAM_CHANNEL_SUBSCRIBE`.
+3. Если подписки нет, бот показывает кнопки «Подписаться» и «Проверить подписку».
+4. После подписки бот спрашивает имя, если оно ещё не сохранено в таблице `users`.
+5. Пользователь попадает в главное меню:
+   - 🎯 подобрать формат занятий;
+   - 📸 посмотреть примеры работы;
+   - 🏆 узнать, кто такой Илья.
+6. При запуске анкеты бот не даёт заполнить её повторно, если для `telegram_id` уже есть запись в `surveys`.
+7. Анкета проходит по блокам: личная информация, здоровье, цели, активность, образ жизни, привычки, мотивация, формат/место/график тренировок.
+8. После завершения бот благодарит пользователя, анализирует ответы через Groq и отправляет Илье готовый результат с контактом пользователя.
 
 ---
 
-## Установка зависимостей
+## Медиафайлы и кэш `file_id`
 
-Проект рассчитан на Python `>=3.14,<3.15`, поэтому сначала убедитесь, что нужная версия Python установлена:
+Список используемых файлов объявлен в `app/bot/attachments.py` в константе `ATTACHMENTS`. При старте `check_attachments()`:
 
-```bash
-python --version
-```
+- получает ID текущего бота;
+- загружает сохранённые `file_id` из таблицы `attachments`;
+- удаляет из БД устаревшие записи, которых больше нет в `ATTACHMENTS`;
+- отправляет новые локальные файлы в чат `MEDIA_CHECK_VICTIM_ID`;
+- сохраняет полученные Telegram `file_id` в БД и in-memory cache.
 
-Чтобы виртуальное окружение создавалось прямо внутри проекта в папке `.venv`, выполните:
-
-```bash
-poetry config virtualenvs.in-project true
-```
-
-Выберите интерпретатор и установите зависимости:
-
-```bash
-poetry env use python3.14
-poetry install
-```
-
-На Windows команда может выглядеть так:
-
-```powershell
-poetry env use 3.14
-poetry install
-```
-
-Проверка окружения:
-
-```bash
-poetry run python --version
-```
-
----
-
-## Как устроены хендлеры
-
-Хендлеры лежат в `app/bot/handlers/`. Каждый файл создаёт свой `Router`, регистрирует обработчики и экспортирует роутер. Затем роутер нужно добавить в список `ROUTERS` в `app/bot/routers.py`.
-
-### Пример команды `/start`
+Если добавляете новое изображение или видео для хендлера, положите файл в `app/attachments/`, добавьте его в `ATTACHMENTS`, затем используйте:
 
 ```python
-from aiogram import Router, types
-from aiogram.filters import CommandStart
+from app.bot.cache import attachments_cache
 
-main_router = Router(name="start")
-
-@main_router.message(CommandStart())
-async def start_command(message: types.Message) -> None:
-    await message.answer("Привет! Это главное меню.")
+file_id = attachments_cache.get("app/attachments/main_menu.jpg")
 ```
 
-### Пример callback-хендлера кнопки
+---
+
+## Хендлеры и роутеры
+
+Хендлеры лежат в `app/bot/handlers/`. Каждый файл создаёт свой `Router`, регистрирует обработчики и экспортирует роутер. Новый роутер нужно добавить в `ROUTERS` в `app/bot/routers.py`.
+
+Основные разделы:
+
+| Файл | Назначение |
+| --- | --- |
+| `main.py` | `/start`, проверка подписки, знакомство, главное меню. |
+| `about.py` | Информация об Илье. |
+| `qualifications.py` | Квалификация и документы. |
+| `approach.py` | Подход к тренировкам и MTR-10. |
+| `results.py` | Пагинация примеров работы с фото и видео. |
+| `survey.py` | Запуск, прохождение и завершение анкеты. |
+| `contacts.py` | Контакты и социальные сети. |
+
+Пример callback-хендлера:
 
 ```python
 from aiogram import F, Router
@@ -219,171 +237,72 @@ async def open_example(callback: CallbackQuery) -> None:
     await callback.message.answer("Кнопка нажата ✅")
 ```
 
-### Подключение нового роутера
-
-```python
-from app.bot.handlers.example import example_router
-
-ROUTERS = [
-    main_router,
-    example_router,
-]
-```
-
----
-
-## Кнопки и сообщения
-
-В проекте используются `InlineKeyboardBuilder` и callback data.
-
-### Создать inline-кнопки
-
-```python
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-
-keyboard = InlineKeyboardBuilder()
-keyboard.button(text="🏠 Главное меню", callback_data="main_menu")
-keyboard.button(text="📸 Примеры работы", callback_data="main_menu:results:1")
-keyboard.adjust(1)
-
-await message.answer("Выберите действие:", reply_markup=keyboard.as_markup())
-```
-
-### Отправить сообщение с картинкой
-
-```python
-await message.answer_photo(
-    photo=attachments_cache.get("app/attachments/main_menu.jpg"),
-    caption="Текст под фото",
-    reply_markup=keyboard.as_markup(),
-)
-```
-
-`attachments_cache` нужен, чтобы брать уже сохранённый Telegram `file_id` и не загружать один и тот же файл каждый раз заново.
-
 ---
 
 ## FSM и таймеры
 
-FSM используется для анкеты в `app/bot/handlers/survey.py`, а состояния описаны в `app/bot/states/survey.py`.
+В проекте есть два FSM-сценария:
 
-### Минимальный пример состояния
+- `AcquaintanceState` — ожидание имени пользователя перед входом в меню.
+- `SurveyState` — ожидание ответов анкеты.
 
-```python
-from aiogram.fsm.state import State, StatesGroup
+Для timeout-логики используется `TimeoutManager` из `app/bot/cache/timeouts.py`. Он создаёт `asyncio.Task`, ждёт нужное количество секунд и вызывает callback, если таймер не отменили.
 
-class MyState(StatesGroup):
-    waiting_text = State()
-```
+Важные правила при изменении сценариев:
 
-### Записать данные и перевести пользователя в состояние
+- отменяйте старый таймер после корректного ответа пользователя;
+- запускайте новый таймер после отправки следующего вопроса;
+- очищайте FSM через `await state.clear()` при завершении или отмене сценария;
+- для inline-вопросов анкеты задавайте `buttons` в `SurveyQuestion`, для текстовых — `min_length` и `max_length`.
 
-```python
-await state.update_data(current_question_index=0)
-await state.set_state(MyState.waiting_text)
-await message.answer("Напишите ответ текстом")
-```
+---
 
-### Обработать сообщение в состоянии
+## Анкета и AI-анализ
 
-```python
-@router.message(MyState.waiting_text)
-async def process_text(message: Message, state: FSMContext) -> None:
-    data = await state.get_data()
-    await state.clear()
-    await message.answer(f"Готово, данные: {data}")
-```
+Вопросы анкеты описаны в `SURVEY_QUESTIONS` в `app/bot/services/survey.py`. Каждый вопрос содержит:
 
-### Таймер ожидания
+- `key` — ключ для сохранения ответа в FSM data;
+- `title` и `text` — текст блока;
+- `timeout_seconds` — время ожидания ответа;
+- `min_length` / `max_length` — валидация текстовых ответов;
+- `buttons` — inline-варианты, если вопрос не текстовый.
 
-Для таймеров используется `TimeoutManager` из `app/bot/cache/timeouts.py`. Он создаёт `asyncio.Task`, ждёт нужное количество секунд и вызывает callback, если таймер не отменили.
+После последнего ответа `finish_survey()`:
 
-Упрощённый пример:
-
-```python
-from app.bot.cache import timeout_manager
-
-timeout_manager.start(
-    user_id=message.from_user.id,
-    timeout_seconds=180,
-    callback=on_timeout,
-)
-
-# Когда пользователь ответил — отменяем старый таймер:
-timeout_manager.cancel(message.from_user.id)
-```
-
-В анкете таймер запускается после каждого вопроса. Если пользователь отвечает корректно, старый таймер отменяется и создаётся новый для следующего вопроса.
+1. Добавляет к данным сохранённое имя пользователя.
+2. Отправляет пользователю сообщение об успешном заполнении.
+3. Вызывает Groq-модель `openai/gpt-oss-20b` для структурирования анкеты.
+4. При недоступности AI отправляет исходные ответы через fallback.
+5. Сохраняет `raw_data` и `detailed_data` в таблицу `surveys`.
+6. Отправляет анкету получателю из `SURVEY_RECEIVER_ID`.
 
 ---
 
 ## Работа с базой данных
 
-Подключение к БД собирается из переменных `POSTGRES_*` в `app/config.py` и используется в `app/db/session.py`.
+Подключение собирается из переменных `POSTGRES_*` в `app/config.py` и используется в `app/db/session.py`.
 
-### Получить `AsyncSession` в хендлере
+Таблицы проекта:
 
-`DbSessionMiddleware` автоматически добавляет `db_session` в аргументы хендлера:
+| Модель | Таблица | Назначение |
+| --- | --- | --- |
+| `User` | `users` | Telegram ID, имя пользователя, флаги блокировки. |
+| `Attachment` | `attachments` | Telegram `file_id` для локальных медиафайлов конкретного бота. |
+| `SurveyData` | `surveys` | Сырые и структурированные ответы анкеты по `telegram_id`. |
+
+`DbSessionMiddleware` автоматически добавляет `db_session` в аргументы хендлеров, делает `commit()` после успешной обработки и `rollback()` при ошибке.
+
+Пример использования репозитория:
 
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession
-
-@router.callback_query(F.data == "profile")
-async def profile(callback: CallbackQuery, db_session: AsyncSession) -> None:
-    ...
-```
-
-Middleware сам делает `commit()` после успешного хендлера и `rollback()` при ошибке.
-
-### Создать модель
-
-Модели лежат в `app/db/models/` и наследуются от `Base`. Если нужны `created_at` и `updated_at`, добавьте `TimestampMixin`.
-
-```python
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, TimestampMixin
-
-class Workout(Base, TimestampMixin):
-    __tablename__ = "workouts"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
-```
-
-После создания модели добавьте её импорт в `app/db/models/__init__.py`, чтобы Alembic видел таблицу при автогенерации.
-
-### Создать репозиторий
-
-Репозитории в проекте — это обычные async-функции, которые принимают `AsyncSession` первым аргументом.
-
-```python
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.models import Workout
-
-async def get_by_id(session: AsyncSession, workout_id: int) -> Workout | None:
-    result = await session.execute(
-        select(Workout).where(Workout.id == workout_id)
-    )
-    return result.scalar_one_or_none()
-```
-
-### Использовать репозиторий в хендлере
-
-```python
 from app.db.repositories import users_repo
 
-@router.message(Command("me"))
-async def me(message: Message, db_session: AsyncSession) -> None:
-    user = await users_repo.get_by_telegram_id(
-        db_session,
-        telegram_id=message.from_user.id,
-    )
-    await message.answer(f"Ваш ID в Telegram: {user.telegram_id}")
+async def handler(db_session: AsyncSession, telegram_id: int) -> None:
+    user = await users_repo.get_by_telegram_id(db_session, telegram_id=telegram_id)
 ```
+
+После создания новой модели добавьте её импорт в `app/db/models/__init__.py`, чтобы Alembic видел таблицу при автогенерации.
 
 ---
 
@@ -391,57 +310,24 @@ async def me(message: Message, db_session: AsyncSession) -> None:
 
 Перед миграциями убедитесь, что PostgreSQL запущен, база создана, а `.env` заполнен.
 
-### Применить миграции
-
 ```bash
+# применить миграции
 poetry run alembic upgrade head
-```
 
-### Создать новую миграцию автоматически
+# создать миграцию по моделям
+poetry run alembic revision --autogenerate -m "migration name"
 
-```bash
-poetry run alembic revision --autogenerate -m "add workouts table"
-```
-
-### Создать пустую миграцию вручную
-
-```bash
+# создать пустую миграцию вручную
 poetry run alembic revision -m "custom migration"
-```
 
-### Откатить последнюю миграцию
+# посмотреть текущую ревизию БД
+poetry run alembic current
 
-```bash
+# откатить последнюю миграцию
 poetry run alembic downgrade -1
 ```
 
-После автогенерации обязательно откройте файл в `alembic/versions/` и проверьте, что Alembic создал именно те изменения, которые нужны.
-
----
-
-## Запуск бота
-
-1. Заполните `.env`.
-2. Запустите PostgreSQL.
-3. Примените миграции:
-
-```bash
-poetry run alembic upgrade head
-```
-
-4. Запустите бота:
-
-```bash
-poetry run python run.py
-```
-
-При запуске бот:
-
-- настраивает логирование;
-- создаёт `Bot` и `Dispatcher`;
-- подключает middleware и роутеры;
-- проверяет/кэширует медиафайлы;
-- сбрасывает webhook и запускает polling.
+После автогенерации обязательно проверьте файл в `alembic/versions/` вручную.
 
 ---
 
@@ -457,21 +343,22 @@ poetry run python run.py
 # применить миграции
 poetry run alembic upgrade head
 
-# создать миграцию по моделям
-poetry run alembic revision --autogenerate -m "migration name"
-
-# посмотреть текущую ревизию БД
+# проверить текущую ревизию БД
 poetry run alembic current
+
+# проверить синтаксис Python-файлов
+poetry run python -m compileall app run.py
 ```
 
 ---
 
-## Небольшие советы по разработке
+## Советы по разработке
 
 - Один экран/раздел бота — один файл в `app/bot/handlers/` и отдельный `Router`.
 - Callback data лучше делать предсказуемой: `section:action:id`, например `main_menu:results:1`.
 - Не забывайте вызывать `await callback.answer()`, чтобы Telegram не показывал вечную загрузку на кнопке.
-- Для долгих сценариев используйте FSM, а промежуточные данные храните в `FSMContext`.
+- Для длинных сценариев используйте FSM, а промежуточные данные храните в `FSMContext`.
 - Любую работу с БД делайте через `db_session`, который приходит из middleware.
+- Новые медиафайлы добавляйте не только в папку, но и в `ATTACHMENTS`.
 - После изменения моделей всегда создавайте и проверяйте миграцию.
 - Секреты не коммитьте: реальные значения должны быть только в локальном `.env`.
