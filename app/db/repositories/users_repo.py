@@ -49,6 +49,21 @@ async def get_or_create(
     )
 
 
+async def set_name(
+        session: AsyncSession,
+        *,
+        telegram_id: int,
+        value: str
+) -> None:
+    stmt = (
+        update(User)
+        .where(User.telegram_id == telegram_id)
+        .values(name=value)
+    )
+
+    await session.execute(stmt)
+
+
 async def set_passed_survey(
         session: AsyncSession,
         *,

@@ -22,6 +22,9 @@ class User(Base, TimestampMixin):
         BigInteger,
         nullable=False,
     )
+    name: Mapped[str] = mapped_column(
+        String, nullable=True
+    )
 
     is_blocked: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
