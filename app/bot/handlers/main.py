@@ -26,14 +26,14 @@ MAIN_BUTTONS.button(text="📸 Примеры работы", callback_data="main
 MAIN_BUTTONS.button(text="🏆 Кто такой Илья", callback_data="about")
 MAIN_BUTTONS.adjust(1)
 
-SUBSCRIBE_KEYBOARD = InlineKeyboardBuilder()
-SUBSCRIBE_KEYBOARD.button(text="📢 Подписаться", url=f"https://t.me/{settings.telegram_channel_subscribe[1:]}")
-SUBSCRIBE_KEYBOARD.button(text="✅ Проверить подписку", callback_data="start:check_subscription")
-SUBSCRIBE_KEYBOARD.adjust(1)
-
 async def check_subscription(message: types.Message, user_id: int) -> bool:
     subscriber = await message.bot.get_chat_member(chat_id=settings.telegram_channel_subscribe,
                                                    user_id=user_id)
+
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(text="📢 Подписаться", url=f"https://t.me/{settings.telegram_channel_subscribe[1:]}")
+    keyboard.button(text="✅ Проверить подписку", callback_data="start:check_subscription")
+    keyboard.adjust(1)
 
     if not subscriber or subscriber.status in ['kicked', 'left']:
         await message.answer(
@@ -41,7 +41,7 @@ async def check_subscription(message: types.Message, user_id: int) -> bool:
             "Здесь публикуются полезные материалы о тренировках, питании, восстановлении, разборы упражнений, "
             "результаты учеников и советы, которые помогут достичь цели без лишней воды.\n\n"
             "После подписки нажмите «✅ Проверить подписку».",
-            reply_markup=SUBSCRIBE_KEYBOARD.as_markup()
+            reply_markup=keyboard.as_markup()
         )
         return False
 
