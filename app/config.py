@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     admin_ids: str = Field(default="", alias="ADMIN_IDS")
     media_check_victim_id: int = Field(alias="MEDIA_CHECK_VICTIM_ID")
     survey_receiver_id: int = Field(alias="SURVEY_RECEIVER_ID")
+    telegram_channel_subscribe: str = Field(alias="TELEGRAM_CHANNEL_SUBSCRIBE")
 
     groq_api_key: str = Field(alias="GROQ_API_KEY")
 
