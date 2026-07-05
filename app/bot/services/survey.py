@@ -3,14 +3,14 @@ import logging
 from dataclasses import dataclass
 
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, User
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from groq import AsyncGroq
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.states.survey import SurveyState
 from app.config import get_settings
-from app.db.repositories import surveys_repo
+from app.db.repositories import surveys_repo, users_repo
 
 
 @dataclass(frozen=True)
@@ -21,149 +21,88 @@ class SurveyQuestion:
     timeout_seconds: int = 180
     min_length: int = 5
     max_length: int = 500
+    buttons: dict[str, str] = None
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
-GROQ_CLIENT = AsyncGroq(api_key=get_settings().groq_api_key)
+GROQ_CLIENT = AsyncGroq(api_key=settings.groq_api_key)
 
 AI_PROMPT = """
-You are a text extraction engine.
+You are a data extraction engine.
 
-Task: analyze a user's free-form message and distribute their answers into the questionnaire below.
+Your task is to analyze the user's free-form text and extract only the information that directly answers the questionnaire fields below.
 
 Rules:
 
-1. Extract ONLY information explicitly written by the user.
-2. Do NOT invent, guess or assume anything.
-3. Do NOT rewrite text.
-4. Do NOT summarize.
-5. Keep user's wording exactly as written.
-6. If there is no answer for a specific question, write exactly: Нет ответа.
-7. One phrase can be used in multiple fields if relevant.
-8. Return ONLY in Russian.
-9. No comments, no explanations, no advice.
+1. Extract only information explicitly written by the user.
+2. Do not invent, guess, infer, or assume anything.
+3. Do not rewrite, paraphrase, summarize, or shorten the user's wording.
+4. Keep the user's wording exactly as written.
+5. If a field has no answer, write exactly: Нет ответа.
+6. The same user phrase may be used in multiple fields if relevant.
+7. Return the final answer only in Russian.
+8. Do not add comments, explanations, advice, or extra text.
+9. Follow the output format exactly.
 
-Format answers by sections.
+Output format:
 
---------------------------------
-
-Блок 1: О вас
-
-ФИО:
-Дата рождения:
-Способ связи:
-Рост:
-Вес:
-Чем занимаетесь:
-Активность работы:
-
-Блок 2: Здоровье
-
-Заболевания:
-Лекарства:
-Травмы:
-Операции:
-Аллергии:
-
-Блок 3: Цели
-
-Желаемый результат:
-Цель по срокам:
-Что нравится в тренировках:
-Что не нравится в тренировках:
-
-Блок 4: Текущая активность
-
-Занимаетесь сейчас:
-Частота тренировок:
-Какие тренировки:
-Длительность тренировки:
-Опыт тренировок в зале:
-Опыт работы с тренером:
-
-Блок 5: Образ жизни
-
-Питание:
-Ограничения в питании:
-Количество воды:
-Количество сна:
-Качество сна:
-Уровень стресса:
-
-Блок 6: Привычки
-
-Курение:
-Алкоголь:
-Другие привычки:
-
-Блок 7: Мотивация
-
-Главный мотив:
-Что мешало раньше:
-Как комфортнее получать поддержку:
-
---------------------------------
-
-Return EXACTLY in this format:
-
-Блок 1: О вас
+Блок 1: Личная информация
 ФИО: ...
 Дата рождения: ...
 Рост: ...
 Вес: ...
-Чем занимаетесь: ...
-Активность работы: ...
+Профессия и уровень физической активности на работе: ...
 
-Блок 2: Здоровье
-Заболевания: ...
-Лекарства: ...
-Травмы: ...
-Операции: ...
+Блок 2: Медицинская история
+Хронические заболевания / состояния: ...
+Регулярно принимаемые лекарства: ...
+Травмы / операции: ...
 Аллергии: ...
 
-Блок 3: Цели
-Желаемый результат: ...
-Цель по срокам: ...
-Что нравится в тренировках: ...
-Что не нравится в тренировках: ...
+Блок 3: Фитнес-цели
+Цели в фитнесе: ...
+Даты / события для подготовки: ...
+Что нравится в спорте / упражнениях: ...
+Что не нравится в спорте / упражнениях: ...
 
-Блок 4: Текущая активность
-Занимаетесь сейчас: ...
-Частота тренировок: ...
-Какие тренировки: ...
-Длительность тренировки: ...
-Опыт тренировок в зале: ...
-Опыт работы с тренером: ...
+Блок 4: Текущий уровень активности
+Частота физической активности: ...
+Виды активности и длительность: ...
+Опыт с тренажерами / в спортзале: ...
 
-Блок 5: Образ жизни
-Питание: ...
-Ограничения в питании: ...
-Количество воды: ...
+Блок 5: Питание и образ жизни
+Пищевые привычки: ...
+Диетические ограничения / предпочтения: ...
+Количество воды в день: ...
 Количество сна: ...
 Качество сна: ...
-Уровень стресса: ...
+Частота стресса: ...
 
-Блок 6: Привычки
+Блок 6: Вредные привычки
 Курение: ...
 Алкоголь: ...
-Другие привычки: ...
+Другие вредные привычки: ...
 
-Блок 7: Мотивация
-Главный мотив: ...
-Что мешало раньше: ...
-Как комфортнее получать поддержку: ...
+Блок 7: Мотивация и препятствия
+Мотивация заниматься фитнесом: ...
+Препятствия для регулярных тренировок: ...
+Формат обратной связи и поддержки: ...
 
-If missing → Нет ответа.
+Блок 8:
+Формат занятий: ...
+Место проведения тренировок: ...
+График тренировок: ...
 """
 
 SURVEY_QUESTIONS = [
     SurveyQuestion(
         key="main_information",
-        title="Вопрос 1. Знакомство",
+        title="Блок 1. Знакомство",
         text=(
-            "Как вас зовут? Ваш возраст, рост, вес.\n"
-            "Чем вы занимаетесь и насколько активна ваша работа "
-            "(сидячая / подвижная)?"
+            "1. Ваш возраст\n"
+            "2. Ваш рост и вес\n"
+            "3. Профессия и уровень физической активности на работе?"
         ),
         timeout_seconds=180,
         min_length=10,
@@ -171,12 +110,13 @@ SURVEY_QUESTIONS = [
     ),
     SurveyQuestion(
         key="health",
-        title="Вопрос 2. Здоровье",
+        title="Блок 2. Медицинская история",
         text=(
-            "Есть ли у вас заболевания или особенности здоровья, которые важно учитывать на тренировках?\n"
-            "Принимаете ли вы сейчас какие-либо лекарства?\n"
-            "Были ли травмы или операции, которые могут влиять на тренировки?\n"
-            "Есть ли у вас аллергии?"
+            "1. Есть ли у вас хронические заболевания или состояния, которые могут повлиять на тренировки "
+            "(сердечно-сосудистые, диабет, артрит и т.д.)?\n"
+            "2. Принимаете ли вы какие-либо лекарства на регулярной основе?\n"
+            "3. Были ли травмы, которые могут повлиять на физическую активность (переломы, растяжения, операции)?\n"
+            "4. Есть ли аллергии, о которых мне следует знать?"
         ),
         timeout_seconds=180,
         min_length=3,
@@ -184,11 +124,11 @@ SURVEY_QUESTIONS = [
     ),
     SurveyQuestion(
         key="goals",
-        title="Вопрос 3. Цели",
+        title="Блок 3: Фитнес-цели",
         text=(
-            "Какой результат вы хотите получить от тренировок?\n"
-            "Есть ли конкретная цель по срокам: событие, дата, форма?\n"
-            "Что вам нравится в тренировках, а что — не очень?"
+            "1. Какие у вас цели в фитнесе? (Похудение, набор массы, улучшение выносливости, реабилитация и т.д.)\n"
+            "2. Есть ли конкретные даты или события, к которым вы хотите подготовиться?\n"
+            "3. Какие виды спорта или упражнения вам нравятся/не нравятся?"
         ),
         timeout_seconds=180,
         min_length=10,
@@ -196,11 +136,11 @@ SURVEY_QUESTIONS = [
     ),
     SurveyQuestion(
         key="current_activity",
-        title="Вопрос 4. Текущая активность",
+        title="Блок 4. Текущий уровень активности",
         text=(
-            "Занимаетесь ли вы сейчас? Если да — как часто?\n"
-            "Какие тренировки или активности вы обычно делаете и сколько по времени?\n"
-            "Есть ли опыт тренировок в зале или с тренером?"
+            "1. Как часто вы сейчас занимаетесь физической активностью?\n"
+            "2. Какие виды активности и как долго вы обычно выполняете?\n"
+            "3. Есть ли у вас опыт работы с тренажерами или в спортзале?"
         ),
         timeout_seconds=180,
         min_length=5,
@@ -208,13 +148,13 @@ SURVEY_QUESTIONS = [
     ),
     SurveyQuestion(
         key="lifestyle",
-        title="Вопрос 5. Образ жизни",
+        title="Блок 5. Питание и образ жизни",
         text=(
-            "Как вы оцениваете своё питание?\n"
-            "Есть ли ограничения или особенности в питании?\n"
-            "Сколько воды вы примерно пьёте в день?\n"
-            "Сколько часов вы спите и насколько хорошо высыпаетесь?\n"
-            "Часто ли вы испытываете стресс?"
+            "1. Как вы оцениваете свои пищевые привычки?\n"
+            "2. Есть ли у вас какие-либо диетические ограничения или предпочтения?\n"
+            "3. Сколько в среднем литров воды вы пьете в день?\n"
+            "4. Сколько часов в среднем вы спите ночью? Как вы оцениваете качество вашего сна?\n"
+            "5. Как часто вы испытываете стресс?"
         ),
         timeout_seconds=180,
         min_length=5,
@@ -222,11 +162,12 @@ SURVEY_QUESTIONS = [
     ),
     SurveyQuestion(
         key="habits",
-        title="Вопрос 6. Привычки",
+        title="Блок 6. Вредные привычки",
         text=(
-            "Курите ли вы?\n"
-            "Употребляете ли алкоголь? Как часто?\n"
-            "Есть ли ещё привычки, которые могут влиять на ваше здоровье или форму?"
+            "1. Курите ли вы? Если да, то как часто?\n"
+            "2. Употребляете ли вы алкоголь? Если да, то как часто и в каких количествах?\n"
+            "3. Есть ли другие вредные привычки, которые могут повлиять на вашу физическую активность "
+            "или здоровье в целом?"
         ),
         timeout_seconds=180,
         min_length=3,
@@ -234,15 +175,54 @@ SURVEY_QUESTIONS = [
     ),
     SurveyQuestion(
         key="motivation",
-        title="Вопрос 7. Мотивация",
+        title="Блок 7. Мотивация и препятствия",
         text=(
-            "Что для вас главный мотив начать тренировки?\n"
-            "Что мешало вам заниматься регулярно раньше?\n"
-            "Как вам комфортнее получать поддержку и обратную связь от тренера?"
+            "1. Что мотивирует вас заниматься фитнесом?\n"
+            "2. Какие основные препятствия мешали вам ранее поддерживать регулярные тренировки?\n"
+            "3. Как вы предпочитаете получать обратную связь и поддержку во время тренировочного процесса?"
         ),
         timeout_seconds=180,
         min_length=5,
         max_length=700,
+    ),
+    SurveyQuestion(
+        key="format_of_trains",
+        title="Блок 8. Формат занятий",
+        text=(
+            "Очные тренировки веду только в БЦ «Аврора». Если не подходит локация — можно выбрать онлайн-формат.\n"
+            "Как вы предпочитаете проводить тренировки?"
+        ),
+        timeout_seconds=60,
+        buttons={
+            "survey:8:1:online": "🟢 Онлайн",
+            "survey:8:1:aurora": "🏢 В БЦ Аврора",
+        }
+    ),
+    SurveyQuestion(
+        key="trains_schedule",
+        title="Блок 8. График тренировок",
+        text=(
+            "Сколько раз в неделю планируете тренироваться?"
+        ),
+        timeout_seconds=60,
+        buttons={
+            "survey:8:3:1": "🔘 Вторник / Четверг",
+            "survey:8:3:2": "🔘 Вторник / Четверг / Суббота",
+            "survey:8:3:3": "🔘 Понедельник / Среда / Пятница",
+            "survey:8:3:4": "🔘 Другое: обсудим лично",
+        },
+    ),
+    SurveyQuestion(
+        key="trains_format",
+        title="Блок 8. Время проведения тренировок",
+        text=(
+            "В какое время вам удобнее тренироваться?"
+        ),
+        timeout_seconds=60,
+        buttons={
+            "survey:8:2:day": "☀️ Днем (13:00 - 16:00)",
+            "survey:8:2:evening": "🌃 Вечером (16:00 - 21:00)"
+        },
     ),
 ]
 
@@ -252,13 +232,28 @@ async def send_question(message: Message, state: FSMContext, index: int) -> None
     await state.update_data(current_question_index=index)
     await state.set_state(SurveyState.answering)
 
+    reply_markup = None
+
+    if question.buttons:
+        keyboard = InlineKeyboardBuilder()
+
+        for callback_data, button_text in question.buttons.items():
+            keyboard.button(text=button_text, callback_data=callback_data)
+
+        keyboard.adjust(1)
+        reply_markup = keyboard.as_markup()
+
+        attention = "Выберите один из вариантов ниже"
+    else:
+        attention = "Ответьте текстовым сообщением"
+
     await message.answer(
         text=(
             f"{question.title}\n\n"
             f"{question.text}\n\n"
-            f"Ответьте текстовым сообщением. "
-            f"На ответ выделено {question.timeout_seconds // 60} мин."
-        )
+            f"{attention}. На ответ выделено {question.timeout_seconds // 60} мин."
+        ),
+        reply_markup=reply_markup
     )
 
 def validate_answer(
@@ -296,7 +291,7 @@ async def analyze_survey(data: dict) -> str | None:
                         "content": str(data)
                     }
                 ],
-                temperature=0.1,
+                temperature=0.3,
                 max_completion_tokens=1000,
                 top_p=1,
                 reasoning_effort="low",
@@ -307,14 +302,7 @@ async def analyze_survey(data: dict) -> str | None:
 
             if not content:
                 raise ValueError("Empty AI response")
-
-            required_blocks = [
-                "Блок 1",
-                "Блок 2",
-                "Блок 3"
-            ]
-
-            if not all(block in content for block in required_blocks):
+            elif not all(f"Блок {block + 1}" in content for block in range(8)):
                 raise ValueError("Malformed AI response")
 
             return content
@@ -343,7 +331,7 @@ def format_raw_survey(data: dict) -> str:
         f"Мотивация:\n{data.get('motivation', 'Нет ответа')}"
     )
 
-async def finish_survey(message: Message, state: FSMContext, db_session: AsyncSession) -> None:
+async def finish_survey(message: Message, state: FSMContext, db_session: AsyncSession, survey_user: User) -> None:
     data = await state.get_data()
     await state.clear()
 
@@ -363,6 +351,15 @@ async def finish_survey(message: Message, state: FSMContext, db_session: AsyncSe
         reply_markup=keyboard.as_markup()
     )
 
+    user = await users_repo.get_by_telegram_id(db_session, telegram_id=survey_user.id)
+    if not user:
+        return
+
+    name = "Не указано"
+    if user.name:
+        name = user.name
+    data['full_name'] = name
+
     analysis = await analyze_survey(data)
 
     if analysis is None:
@@ -370,14 +367,14 @@ async def finish_survey(message: Message, state: FSMContext, db_session: AsyncSe
 
     author_id = get_settings().survey_receiver_id
 
-    if not message.from_user.username:
-        user = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.full_name}</a>'
+    if not survey_user.username:
+        user_link = f'<a href="tg://user?id={survey_user.id}">{survey_user.full_name}</a>'
     else:
-        user = f'@{message.from_user.username} ({message.from_user.full_name})'
+        user_link = f'@{survey_user.username} ({survey_user.full_name})'
 
     await surveys_repo.set_data(
         db_session,
-        telegram_id=message.from_user.id,
+        telegram_id=survey_user.id,
         raw_data=str(data),
         detailed_data=analysis,
     )
@@ -386,6 +383,6 @@ async def finish_survey(message: Message, state: FSMContext, db_session: AsyncSe
         text=(
             "🔥 Новый ответ на анкету в боте!\n\n"
             f"{analysis}\n\n"
-            f"➡️ Перейти к контакту: {user}"
+            f"➡️ Перейти к контакту: {user_link}"
         )
     )

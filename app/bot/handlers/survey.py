@@ -1,11 +1,11 @@
 from aiogram import Bot, F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, User
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.cache import attachments_cache, timeout_manager
-from app.bot.services.survey import SURVEY_QUESTIONS, validate_answer, send_question, finish_survey
+from app.bot.services.survey import SURVEY_QUESTIONS, validate_answer, send_question, finish_survey, SurveyQuestion
 from app.bot.states.survey import SurveyState
 from app.db.repositories import surveys_repo
 from app.utils.message_resolver import remove_old_message
@@ -75,6 +75,8 @@ async def survey(callback: CallbackQuery, db_session: AsyncSession) -> None:
             "Заполнение анкеты\n\n"
             "Ответьте на несколько вопросов. Отвечайте честно и понятно, это поможет в будущем "
             "подобрать под вас план тренировок и питания.\n\n"
+            "Обратите внимание: очные тренировки проходят исключительно в БЦ „Аврора“. "
+            "Также возможен дистанционный формат\n\n"
             "Илья получит ваш контакт, далее он сможет связаться с вами и предложить подходящий вариант работы.\n\n"
             "Выберите опцию ниже чтобы продолжить"
         ),
@@ -104,6 +106,32 @@ async def survey_start(callback: CallbackQuery, state: FSMContext) -> None:
         question_index=0,
     )
 
+async def process_survey(
+        state: FSMContext,
+        question: SurveyQuestion,
+        answer: str,
+        index: int,
+        message: Message,
+        db_session: AsyncSession,
+        user: User
+) -> None:
+    await state.update_data(**{question.key: answer})
+    next_index = index + 1
+
+    if next_index >= len(SURVEY_QUESTIONS):
+        await finish_survey(message, state, db_session, survey_user=user)
+        return
+
+    await send_question(message, state, next_index)
+
+    schedule_survey_timeout(
+        user_id=user.id,
+        chat_id=message.chat.id,
+        bot=message.bot,
+        state=state,
+        question_index=next_index,
+    )
+
 @survey_router.message(SurveyState.answering)
 async def process_survey_answer(message: Message, state: FSMContext, db_session: AsyncSession) -> None:
     timeout_manager.cancel(message.from_user.id)
@@ -112,6 +140,9 @@ async def process_survey_answer(message: Message, state: FSMContext, db_session:
     index = data.get("current_question_index", 0)
 
     question = SURVEY_QUESTIONS[index]
+
+    if question.buttons:
+        return
 
     error = validate_answer(
         text=message.text,
@@ -136,19 +167,21 @@ async def process_survey_answer(message: Message, state: FSMContext, db_session:
 
     answer = message.text.strip()
 
-    await state.update_data(**{question.key: answer})
-    next_index = index + 1
+    await process_survey(state, question, answer, index, message, db_session, message.from_user)
 
-    if next_index >= len(SURVEY_QUESTIONS):
-        await finish_survey(message, state, db_session)
+@survey_router.callback_query(SurveyState.answering)
+async def process_survey_button(callback: CallbackQuery, state: FSMContext, db_session: AsyncSession) -> None:
+    timeout_manager.cancel(callback.from_user.id)
+
+    data = await state.get_data()
+    index = data.get("current_question_index", 0)
+
+    question = SURVEY_QUESTIONS[index]
+
+    if not question.buttons:
         return
 
-    await send_question(message, state, next_index)
+    answer = question.buttons[callback.data]
 
-    schedule_survey_timeout(
-        user_id=user_id,
-        chat_id=chat_id,
-        bot=bot,
-        state=state,
-        question_index=next_index,
-    )
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await process_survey(state, question, answer, index, callback.message, db_session, callback.from_user)
