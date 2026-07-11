@@ -27,32 +27,11 @@ MAIN_BUTTONS = InlineKeyboardBuilder()
 MAIN_BUTTONS.button(text="🎯 Подобрать формат занятий", callback_data="survey")
 MAIN_BUTTONS.button(text="📸 Примеры работы", callback_data="main_menu:results:1")
 MAIN_BUTTONS.button(text="🏆 Кто такой Илья", callback_data="about")
-MAIN_BUTTONS.adjust(1)
-
-
-async def check_subscription(message: types.Message, user_id: int) -> bool:
-    subscriber = await message.bot.get_chat_member(chat_id=settings.telegram_channel_subscribe,
-                                                   user_id=user_id)
-
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="📢 Подписаться", url=f"https://t.me/{settings.telegram_channel_subscribe[1:]}")
-    keyboard.button(text="✅ Проверить подписку", callback_data="start:check_subscription")
-    keyboard.adjust(1)
-
-    if not subscriber or subscriber.status in ['kicked', 'left']:
-        await message.answer(
-            "Здравствуйте 👋\n"
-            "Это бот Ильи, персонального тренера 🏋️ Здесь можно посмотреть результаты учеников, узнать об Илье "
-            "и оставить заявку на подбор формата занятий.\n\n"
-            "📢 Чтобы продолжить, сперва подпишитесь на канал Ильи!\n\n"
-            "Здесь публикуются полезные материалы о тренировках, питании, восстановлении, разборы упражнений, "
-            "результаты учеников и советы, которые помогут достичь цели без лишней воды.\n\n"
-            "После подписки нажмите «✅ Проверить подписку».",
-            reply_markup=keyboard.as_markup()
-        )
-        return False
-
-    return True
+MAIN_BUTTONS.button(
+    text="👥 Получать полезные материалы",
+    url=f"https://t.me/{settings.telegram_channel_subscribe[1:]}"
+)
+MAIN_BUTTONS.adjust(1, 2, 1)
 
 
 def schedule_acquaintance_timeout(user_id: int, bot: Bot, chat_id: int, state: FSMContext) -> None:
@@ -111,36 +90,10 @@ async def check_user_name(message: types.Message, user_id: int, db_session: Asyn
 
 @main_router.message(CommandStart())
 async def start_command(message: types.Message, db_session: AsyncSession, state: FSMContext) -> None:
-    if not await check_subscription(message, message.from_user.id):
-        return
-    elif not await check_user_name(message, message.from_user.id, db_session, state):
+    if not await check_user_name(message, message.from_user.id, db_session, state):
         return
 
     await message.answer_photo(
-        photo=attachments_cache.get("app/attachments/main_menu.jpg"),
-        caption=MAIN_MESSAGE,
-        reply_markup=MAIN_BUTTONS.as_markup(),
-    )
-
-
-@main_router.callback_query(F.data == "start:check_subscription")
-async def start_check_subscription(callback: CallbackQuery, db_session: AsyncSession, state: FSMContext) -> None:
-    await callback.answer()
-    old_message = await remove_old_message(callback)
-
-    if not await check_subscription(callback.message, callback.from_user.id):
-        return
-
-    await callback.message.answer(
-        "🎉 Спасибо, что подписались на канал!\n\n"
-        "Желаю, чтобы материалы были для вас полезными, а бот помог сделать первый шаг к вашей цели. "
-        "Добро пожаловать! 💪"
-    )
-
-    if not await check_user_name(callback.message, callback.from_user.id, db_session, state):
-        return
-
-    await old_message.answer_photo(
         photo=attachments_cache.get("app/attachments/main_menu.jpg"),
         caption=MAIN_MESSAGE,
         reply_markup=MAIN_BUTTONS.as_markup(),
