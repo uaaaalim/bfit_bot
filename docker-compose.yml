@@ -1,0 +1,19 @@
+services:
+  bfit-bot:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+
+    networks:
+      - database
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  database:
+    internal: true

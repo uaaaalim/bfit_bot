@@ -146,6 +146,32 @@ poetry run python run.py
 
 ---
 
+## Запуск через Docker Compose
+
+Создайте `.env` из `.env.example` и заполните настройки бота, а также
+`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`. Для новой контейнерной БД
+можно выбрать `POSTGRES_USER=bfit` и `POSTGRES_DB=bfit_bot`; пароль задайте свой.
+Compose запускает отдельный PostgreSQL и автоматически задаёт боту
+`POSTGRES_HOST=postgres` и `POSTGRES_PORT=5432`, переопределяя значения из `.env`.
+Существующая внешняя база данных при этом не используется.
+
+```bash
+docker compose up -d --build
+docker compose logs -f bfit-bot
+```
+
+Бот ждёт готовности PostgreSQL, применяет миграции Alembic и запускает polling.
+При ошибке миграции запуск бота не выполняется. Логи идут в Docker с ротацией.
+Данные PostgreSQL хранятся в именованном volume `postgres_data`.
+
+После обновления кода повторите `docker compose up -d --build`.
+Для остановки используйте `docker compose down`: данные БД сохранятся.
+Команда `docker compose down -v` удаляет и данные БД.
+Изменение `POSTGRES_USER`, `POSTGRES_PASSWORD` или `POSTGRES_DB` в `.env`
+не меняет учётные данные уже инициализированной базы в volume.
+
+---
+
 ## Установка Poetry
 
 ### Ubuntu / Debian
